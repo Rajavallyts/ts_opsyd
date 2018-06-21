@@ -840,7 +840,7 @@ function array_find_deep($array, $search, $keys = array())
                 return $sub;
             }
         } elseif ($value === $search) {
-			if($key == "webform_select")
+			if($key == "webform_select" || $key == "select_all")
 				return array_merge($keys, array($key));
 			else
 				return array();
