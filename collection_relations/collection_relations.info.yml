@@ -1,0 +1,5 @@
+name: 'Collection Relations'
+type: module
+description: 'Used for saving the relational field details'
+core: 8.x
+package: 'Custom'

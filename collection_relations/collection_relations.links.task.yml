@@ -1,0 +1,27 @@
+# Collection relations routing definition
+collection_relations.settings_tab:
+  route_name: collection_relations.settings
+  title: 'Settings'
+  base_route: collection_relations.settings
+
+entity.collection_relations.canonical:
+  route_name: entity.collection_relations.canonical
+  base_route: entity.collection_relations.canonical
+  title: 'View'
+
+entity.collection_relations.edit_form:
+  route_name: entity.collection_relations.edit_form
+  base_route: entity.collection_relations.canonical
+  title: 'Edit'
+
+entity.collection_relations.version_history:
+  route_name: entity.collection_relations.version_history
+  base_route: entity.collection_relations.canonical
+  title: 'Revisions'
+
+entity.collection_relations.delete_form:
+  route_name:  entity.collection_relations.delete_form
+  base_route:  entity.collection_relations.canonical
+  title: Delete
+  weight: 10
+

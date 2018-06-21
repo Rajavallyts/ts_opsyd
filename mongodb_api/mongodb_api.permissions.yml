@@ -1,0 +1,14 @@
+administer mongodb_api:
+  title: 'Administer MongoDB API'
+  description: 'Manage MongoDB database API, collections, documents and key-value-type pair'
+  restrict access: true
+
+dataforms mongodb_api:
+  title: 'Dataform Access'
+  description: 'Manage Dataforms (Add/Edit)'
+  restrict access: true
+
+dataforms listing mongodb_api:
+  title: 'Dataforms Listing'
+  description: 'Dataforms Listing'
+  restrict access: true

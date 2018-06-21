@@ -1,0 +1,14 @@
+
+# Collection relations menu items definition
+entity.collection_relations.collection:
+  title: 'Collection relations list'
+  route_name: entity.collection_relations.collection
+  description: 'List Collection relations entities'
+  parent: system.admin_structure
+  weight: 100
+
+collection_relations.admin.structure.settings:
+  title: 'Collection relations settings'
+  description: 'Configure Collection relations entities'
+  route_name: collection_relations.settings
+  parent: system.admin_structure

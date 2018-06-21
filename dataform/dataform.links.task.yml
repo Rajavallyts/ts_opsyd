@@ -1,0 +1,22 @@
+# Data Form Setting routing definition
+dataform.settings_tab:
+  route_name: dataform.settings
+  title: 'Settings'
+  base_route: dataform.settings
+
+entity.dataform.canonical:
+  route_name: entity.dataform.canonical
+  base_route: entity.dataform.canonical
+  title: 'View'
+
+entity.dataform.edit_form:
+  route_name: entity.dataform.edit_form
+  base_route: entity.dataform.canonical
+  title: 'Edit'
+
+entity.dataform.delete_form:
+  route_name:  entity.dataform.delete_form
+  base_route:  entity.dataform.canonical
+  title: Delete
+  weight: 10
+

@@ -1,0 +1,19 @@
+add data form setting entities:
+  title: 'Create new Data Form Setting entities'
+
+administer data form setting entities:
+  title: 'Administer Data Form Setting entities'
+  description: 'Allow to access the administration form to configure Data Form Setting entities.'
+  restrict access: true
+
+delete data form setting entities:
+  title: 'Delete Data Form Setting entities'
+
+edit data form setting entities:
+  title: 'Edit Data Form Setting entities'
+
+view published data form setting entities:
+  title: 'View published Data Form Setting entities'
+
+view unpublished data form setting entities:
+  title: 'View unpublished Data Form Setting entities'

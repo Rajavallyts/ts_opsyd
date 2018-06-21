@@ -1,0 +1,11 @@
+mongodb_api.customjs:
+  css:
+    layout:
+        css/mongodb_api.css: {}
+        js/datatable/datatables.min.css: {}
+  js:
+    js/mongodb_api.js: {}
+    js/datatable/datatables.min.js: {}
+  dependencies:
+    - core/jquery
+    - core/drupalSettings

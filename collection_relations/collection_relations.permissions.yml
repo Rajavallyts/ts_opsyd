@@ -1,0 +1,30 @@
+add collection relations entities:
+  title: 'Create new Collection relations entities'
+
+administer collection relations entities:
+  title: 'Administer Collection relations entities'
+  description: 'Allow to access the administration form to configure Collection relations entities.'
+  restrict access: true
+
+delete collection relations entities:
+  title: 'Delete Collection relations entities'
+
+edit collection relations entities:
+  title: 'Edit Collection relations entities'
+
+view published collection relations entities:
+  title: 'View published Collection relations entities'
+
+view unpublished collection relations entities:
+  title: 'View unpublished Collection relations entities'
+
+view all collection relations revisions:
+  title: 'View all Collection relations revisions'
+
+revert all collection relations revisions:
+  title: 'Revert all Collection relations revisions'
+  description: 'Role requires permission <em>view Collection relations revisions</em> and <em>edit rights</em> for collection relations entities in question or <em>administer collection relations entities</em>.'
+
+delete all collection relations revisions:
+  title: 'Delete all revisions'
+  description: 'Role requires permission to <em>view Collection relations revisions</em> and <em>delete rights</em> for collection relations entities in question or <em>administer collection relations entities</em>.'

@@ -1,0 +1,220 @@
+/*.mongodb_subform_list {
+width: 340px;
+height: 20px;
+float: right;
+margin-left: 10px;
+padding: 5px;
+border: red 1px solid;
+margin-top: 10px;
+}
+.clearboth {
+	clear:both;
+} */
+
+.container {
+    width:100%;
+    border:1px solid #d3d3d3;
+}
+.container div {
+    width:100%;
+}
+.container #apiheader {
+    background-color:#d3d3d3;
+    padding: 2px;
+    cursor: pointer;    
+}
+.container .testcontent {
+    display: none;
+    padding : 5px;
+	min-height: 30px;
+}
+
+#copyToClipboard {
+	cursor: pointer;
+float: right;
+width: 100px;
+background-color: #ececec;
+text-align: center;
+padding: 3px 5px;
+border: #d5d0d0 1px solid;
+margin-right: 20px;
+}
+
+.mongodb_subform_list {
+width: 340px;
+height: 20px;
+float: left;
+margin-left: 10px;
+padding: 5px;
+margin-top: 10px;
+}
+
+.clearboth {
+	clear:both;
+}
+
+#manage-document .form-checkbox, #subdocument_wrapper .form-checkbox, #collectionsetting .form-checkbox {
+	float: left;
+	margin-top: 20px;
+}
+#collectionsetting .form-text {
+	/* border: #000 0px !important; */
+	background-color:#fff;
+}
+
+/* #collectionsetting .js-form-item-collection-url #edit-collection-url {
+   border: #c0c0c0 1px solid !important;
+} */
+
+#main .block-local-tasks-block ul.tabs.primary li.is-active a {
+	pointer-events: none;
+    cursor: default;
+}
+.collection_container {
+	line-height: 50px;
+	border-bottom: #ececec 1px solid;
+}
+/* input {
+	border: red 1px solid !important;
+} */
+.collectionsetting .form-checkbox {
+	float: left;
+	margin-top: 18px;
+}
+
+/* .js-form-required:after{
+	content: '';
+    vertical-align: super;
+    display: inline-block;
+    background-image: url(../../../../misc/icons/ee0000/required.svg);
+    background-repeat: no-repeat;
+    background-size: 6px 6px;
+    width: 6px;
+    height: 6px;
+    margin: 0 0.3em;
+} */
+
+.node-mongodb-information-form div#edit-field-address-wrapper,
+.node-mongodb-information-form div#edit-field-address-port-wrapper,
+.node-mongodb-information-form div#edit-field-ssh-address-wrapper,
+.node-mongodb-information-form div#edit-field-ssh-address-port-wrapper,
+.node-mongodb-information-edit-form div#edit-field-address-wrapper,
+.node-mongodb-information-edit-form div#edit-field-address-port-wrapper,
+.node-mongodb-information-edit-form div#edit-field-ssh-address-wrapper,
+.node-mongodb-information-edit-form div#edit-field-ssh-address-port-wrapper{
+	display: inline-block;
+}
+
+.page-node-type-mongodb-information .block-local-tasks-block{
+	display:none;
+}
+
+.node-mongodb-information-form .form-wrapper,
+.node-mongodb-information-form .form-item,
+.node-mongodb-information-edit-form .form-wrapper,
+.node-mongodb-information-edit-form .form-item{
+	margin-bottom: 0 !important;
+}
+
+.node-mongodb-information-form .form-actions,
+.node-mongodb-information-edit-form .form-actions{
+	margin-top: 1em !important;
+}
+
+.node-mongodb-information-form div#edit-field-address-wrapper,
+.node-mongodb-information-form div#edit-field-ssh-address-wrapper,
+.node-mongodb-information-edit-form div#edit-field-address-wrapper,
+.node-mongodb-information-edit-form div#edit-field-ssh-address-wrapper {
+    width: 39%;
+}
+
+.node-mongodb-information-form div#edit-field-address-port-wrapper,
+.node-mongodb-information-form div#edit-field-ssh-address-port-wrapper,
+.node-mongodb-information-edit-form div#edit-field-address-port-wrapper,
+.node-mongodb-information-edit-form div#edit-field-ssh-address-port-wrapper {
+    width: 15%;
+}
+
+.address-desc {
+    font-size: 0.85em;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+#collection-relationform select{
+	width:60%;
+}
+.collections-set{
+	float:left;
+	width:50%;
+}
+#collection-relationform #edit-submit{
+	clear:both;
+}
+.ajax-progress .message{
+	display:none !important;
+}
+
+.collectionsetting .details-wrapper, .key-update .details-wrapper{
+    display: inline-block;
+    width: 95%;
+}
+
+.collectionsetting #edit-document{
+    width: 110%;
+}
+
+.collectionsetting select, .key-update select, .dropdown_values input{
+	margin:10px;
+	height:30px;
+}
+
+div.dataTables_wrapper {
+	width: 920px;
+	margin: 0 auto;
+}
+
+.dataTables_wrapper {
+	overflow: auto;
+}
+
+.multiple_check{
+	float:left;
+}
+.multiple_check .form-checkbox, input[id$="document-select-all"]{
+	margin-top:4px !important;
+}
+
+#dataform_list .thumb-file--image {
+    background-image: url(/core/themes/classy/images/icons/image-x-generic.png);
+}
+
+#dataform_list .thumb-file {
+    padding-left: 20px;
+    display: inline-block;
+    min-height: 16px;
+    background-repeat: no-repeat;
+    background-position: left center;
+}
+
+#dataform_list .thumb-file a.image-link{
+	float:left;
+}
+
+ul.sf-menu.sf-style-white {
+	margin-bottom: -12px !important;
+}
+
+ul.sf-menu.menu, ul.sf-menu.menu ul, ul.sf-menu.menu li {
+    margin: 1px;
+}
+
+.path-mongodb-list .indicator{
+	float:right;
+	margin-top: 2px;
+    height: 14px;
+    width: 14px;
+}
+.path-mongodb-list .indicator.active{
+	background-image: url(../images/indicator.png);
+	background-size: cover;
+}

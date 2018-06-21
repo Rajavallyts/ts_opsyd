@@ -1,0 +1,5 @@
+entity.dataform.add_form:
+  route_name: entity.dataform.add_form
+  title: 'Add Data Form Setting'
+  appears_on:
+    - entity.dataform.collection

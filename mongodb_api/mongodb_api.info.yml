@@ -1,0 +1,16 @@
+name: MongoDB API
+description: Module to integrate MongoDB API calls
+package: Custom
+type: module
+version: 1.0
+core: 8.x
+configure: mongodb_api.admin_config
+dependencies:
+  - 's3fs:s3fs'
+  - 'webform:webform'
+  - 'group:group'
+  - 'conditional_fields:conditional_fields'
+  - 'url_redirect:url_redirect'
+  - 'superfish:superfish'
+  - 'dataform:dataform'
+  - 'collection_relations:collection_relations'

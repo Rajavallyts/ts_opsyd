@@ -1,0 +1,8 @@
+mongodb_api.settings:
+  type: mapping
+  label: 'Mongodb API settings'
+  mapping:
+    endpointurl:
+      type: text
+      label: 'Mongo DB - API Endpoint url'   
+      

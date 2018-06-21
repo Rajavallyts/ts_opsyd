@@ -1,0 +1,14 @@
+{
+  "name": "drupal/collection_relations",
+  "type": "drupal-module",
+  "description": "Used for saving the relational field details",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/collection_relations",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/collection_relations",
+    "source": "http://cgit.drupalcode.org/collection_relations"
+  },
+  "require": { }
+}

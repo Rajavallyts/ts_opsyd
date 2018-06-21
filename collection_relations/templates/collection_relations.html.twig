@@ -1,0 +1,22 @@
+{#
+/**
+ * @file collection_relations.html.twig
+ * Default theme implementation to present Collection relations data.
+ *
+ * This template is used when viewing Collection relations pages.
+ *
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ * - attributes: HTML attributes for the container element.
+ *
+ * @see template_preprocess_collection_relations()
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes.addClass('collection_relations') }}>
+  {% if content %}
+    {{- content -}}
+  {% endif %}
+</div>

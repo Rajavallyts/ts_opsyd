@@ -1,0 +1,14 @@
+{
+  "name": "drupal/dataform",
+  "type": "drupal-module",
+  "description": "DataForm Entity Type and DataForm related fields",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/dataform",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/dataform",
+    "source": "http://cgit.drupalcode.org/dataform"
+  },
+  "require": { }
+}

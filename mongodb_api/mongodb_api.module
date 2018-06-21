@@ -1,0 +1,589 @@
+<?php
+
+/*
+ * Implements hook_form_FORM_ID_alter
+ */
+
+function mongodb_api_form_node_mongodb_information_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	
+	$form['title']['widget'][0]['value']['#description'] = t('Choose any connection name that will help you to identify this connection.');
+	$form['field_address']['widget'][0]['value']['#size'] = 40;
+	$form['field_address_port']['widget'][0]['value']['#title'] = '';
+	$form['field_address_port']['widget'][0]['value']['#size'] = 15;
+	$form['field_address_port']['#suffix'] = '<div class="address-desc">'.t("Specify host and port of MongoDB Server. Host can be either IPv4, IPv6 or domain name.").'</div>';
+	
+	$form['field_ssh_address']['widget'][0]['value']['#size'] = 40;
+	$form['field_ssh_address_port']['widget'][0]['value']['#title'] = '';
+	$form['field_ssh_address_port']['widget'][0]['value']['#size'] = 15;
+	
+	$group_array = [];
+	$membership_loader = \Drupal::service('group.membership_loader');
+	if(!empty($membership_loader)){
+		foreach ($membership_loader->loadByUser(\Drupal::currentUser()) as $group_membership) {
+			$group_array[$group_membership->getGroup()->id()] = $group_membership->getGroup()->label();
+		}
+	}
+	$form['field_group_name']['widget']['#options'] = $group_array;
+	
+	$form['advanced']['#access'] = FALSE;
+	$submit_action = $form['actions']['submit']['#submit'];
+	$submit_action[] = 'mongodb_submit_connect';
+	$form['#validate'][] = 'mongodb_custom_validate';
+	$form['actions']['submit_connect'] = array(
+		'#type' => 'submit',
+		'#value' => t('Add and Connect'),
+		'#submit' => $submit_action,
+		'#button_type' => 'primary',
+	);
+	$form['meta']['#access'] = FALSE;
+	$form['menu']['#access'] = FALSE;
+	$form['revision_information']['#access'] = FALSE;
+
+	foreach (array_keys($form['actions']) as $action) {
+    if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      $form['actions'][$action]['#submit'][] = 'callback_submit';
+    }
+  }
+ 
+}
+
+function callback_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  //$form_state->setRedirect('custom.page');
+  global $base_url;
+	
+	// get group ids
+	$cur_group = $form_state->getValue('field_group_name')[0]['target_id'];
+	$old_group = $form_state->getValue('old_group');
+	
+	// load node data
+	$current_nid = $form_state->getValue('nid');
+	$node_data = node_load($current_nid);
+	
+	// remove from existing
+	if(!empty($old_group) && $old_group != $cur_group){
+
+		// remove existing
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($old_group);
+		foreach($group->getContent() as $key => $content){
+			if($content->getGroupContentType()->get('content_plugin') == 'group_node:mongodb_information'){
+				if($content->getEntity()->id() == $current_nid){
+					$content->delete();
+				}
+			}
+		}
+		
+		// move to new group
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+		$group->addContent($node_data, 'group_node:mongodb_information');
+	}
+	
+	// add to group - first time
+	if(empty($old_group)){
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+		$group->addContent($node_data, 'group_node:mongodb_information');
+	}
+	
+  $redirect_url = $base_url . '/mongodb-list';
+			$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+			$response->send();
+			return;
+}
+
+
+/*
+ * Implements hook_form_alter
+ */
+
+function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	$current_user = \Drupal::currentUser();
+	$roles = $current_user->getRoles();
+	if($form_id == "user_form"){
+		
+		// hide "request-rol"e field in user's page
+		if(in_array("datamanager",$roles)){
+			unset($form["field_request_role"]);
+		}
+		
+		// add a custom submit for admin users
+		if(in_array("administrator",$roles)){
+			foreach (array_keys($form['actions']) as $action) {
+				if ($action != 'delete' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+				  $form['actions'][$action]['#submit'][] = 'custom_profile_submit';
+				}
+			}
+		}
+	}
+
+	if($current_user->id() == 0){
+		if($form_id == "user_register_form"){
+			$form["request_role"] = array(
+				'#title' => t('Request Role'),
+				'#type' => 'select',
+				'#options' => array(
+					'datamanager' => t('Data Manager'),
+					'datauser' => t('Data User')
+				),
+				'#required' => TRUE
+			);
+		
+			$form['actions']['submit']['#submit'][] = 'custom_user_register_submit';
+		}
+	}
+}
+
+function custom_user_register_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+	
+    $uid = $form_state->getValue("uid");
+    $role = $form_state->getValue("request_role");
+
+    $user = \Drupal\user\Entity\User::load($uid);
+	if($user){
+        $user->addRole($role);
+		$user->save();
+    }
+}
+
+function custom_profile_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+
+	$datauser = \Drupal\user\Entity\User::load($form_state->getValue('uid'));
+	// custom submit only working, if user select for datamanger role
+	if(in_array("datamanager",$form_state->getValue('roles'))){
+		
+		// check if group is already created or not
+		$grps = \Drupal::service('group.membership_loader')->loadByUser($datauser);
+		$groups = array();
+		foreach ($grps as $grp) {
+				$groups[] = $grp->getGroup();
+		}
+		
+		if(empty($groups)){
+			// create a group with username as prefix
+			$group_name = $form_state->getValue("name")."_group";
+			$group = \Drupal::entityTypeManager()->getStorage('group')->create([
+				'uid' => \Drupal::currentUser()->id(),
+				'type' => 'group_a',
+				'label' => $group_name,
+			]);
+			$group->enforceIsNew();
+			$group->save();
+			
+			// adding as group memeber
+			$group->addContent($datauser, 'group_membership');
+		}
+	}
+}
+
+/*
+ * Implements hook_form_FORM_ID_alter
+ */
+
+function mongodb_api_form_node_mongodb_information_edit_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{
+	
+	$form["#title"] = t("Edit MongoDB Connection Information");
+	$form['title']['widget'][0]['value']['#description'] = t('Choose any connection name that will help you to identify this connection.');
+	$form['field_address']['widget'][0]['value']['#size'] = 40;
+	$form['field_address_port']['widget'][0]['value']['#title'] = '';
+	$form['field_address_port']['widget'][0]['value']['#size'] = 15;
+	$form['field_address_port']['#suffix'] = '<div class="address-desc">'.t("Specify host and port of MongoDB Server. Host can be either IPv4, IPv6 or domain name.").'</div>';
+	
+	$form['field_ssh_address']['widget'][0]['value']['#size'] = 40;
+	$form['field_ssh_address_port']['widget'][0]['value']['#title'] = '';
+	$form['field_ssh_address_port']['widget'][0]['value']['#size'] = 15;
+	
+	// load node data
+	$node = \Drupal::routeMatch()->getParameter('node');
+	if ($node instanceof \Drupal\node\NodeInterface) {
+	  $old_group = $node->get('field_group_name')->getValue()[0]['target_id'];
+	  $current_nid = $node->id();
+	}
+	
+	$group_array = [];
+	$default_group = '';
+	$membership_loader = \Drupal::service('group.membership_loader');
+	if(!empty($membership_loader)){
+		foreach ($membership_loader->loadByUser(\Drupal::currentUser()) as $group_membership) {
+			// make dropdown array
+			$group_array[$group_membership->getGroup()->id()] = $group_membership->getGroup()->label();
+			
+			// get default value
+			foreach($group_membership->getGroup()->getContent() as $content){
+				if($content->getGroupContentType()->get('content_plugin') == 'group_node:mongodb_information'){
+					if($content->getEntity()->id() == $current_nid){
+						$default_group = $group_membership->getGroup()->id();
+					}
+				}
+			}
+		}
+	}
+	
+	$form['field_group_name']['widget']['#options'] = $group_array;
+	$form['field_group_name']['widget']['#default_value'] = $default_group;
+	
+	$form['old_group'] = [
+		'#type' => 'hidden',
+		'#default_value' => $default_group
+	];
+	
+	$form['meta']['#access'] = FALSE;
+	$form['menu']['#access'] = FALSE;
+	$form['revision_information']['#access'] = FALSE;
+	$submit_action = $form['actions']['submit']['#submit'];
+	$submit_action[] = 'mongodb_submit_connect';
+	$form['#validate'][] = 'mongodb_custom_validate';
+	$form['actions']['submit_connect'] = array
+	(
+		'#type' => 'submit',
+		'#value' => t('Save and Connect'),
+		'#submit' => $submit_action,
+		'#button_type' => 'primary',
+	);
+	$form['actions']['delete']['#access'] = FALSE;
+	foreach (array_keys($form['actions']) as $action) {
+    if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      $form['actions'][$action]['#submit'][] = 'callback_submit';
+    }
+  }
+}
+
+/*
+ * Implements hook_form_FORM_ID_alter
+ */
+
+function mongodb_api_form_node_mongodb_information_delete_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+{	
+	$form['actions']['cancel']['#access'] = FALSE;
+
+	foreach (array_keys($form['actions']) as $action) {
+    if ($action != 'preview' && isset($form['actions'][$action]['#type']) && $form['actions'][$action]['#type'] === 'submit') {
+      $form['actions'][$action]['#submit'][] = 'callback_submit';
+    }
+  }
+}
+
+/**
+ *  Custom validate handler to save MongoDB Information and Connect
+ */
+
+function mongodb_custom_validate(&$form, &$form_state)
+{
+	/* if(count($form_state->getValue("field_upload_key")[0]["fids"]) == 0 && !empty($form_state->getValue("field_username")[0]["value"]) && empty($form_state->getValue("field_password")[0]["value"])){
+		$form_state->setErrorByName('field_password', t('Password field is required.'));
+	}else if(count($form_state->getValue("field_upload_key")[0]["fids"]) == 0 && empty($form_state->getValue("field_username")[0]["value"]) && empty($form_state->getValue("field_password")[0]["value"])){
+		$form_state->setErrorByName('field_password', t('Username and Password field is required.'));
+	} */
+}
+
+/**
+ *  Custom submit handler to save MongoDB Information and Connect
+ */
+
+function mongodb_submit_connect(&$form, &$form_state)
+{
+	global $base_url;
+	
+	// get group ids
+	$cur_group = $form_state->getValue('field_group_name')[0]['target_id'];
+	$old_group = $form_state->getValue('old_group');
+	
+	// load node data
+	$current_nid = $form_state->getValue('nid');
+	$node_data = node_load($current_nid);
+	
+	// remove from existing
+	if(!empty($old_group) && $old_group != $cur_group){
+
+		// remove existing
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($old_group);
+		foreach($group->getContent() as $content){
+			if($content->getGroupContentType()->get('content_plugin') == 'group_node:mongodb_information'){
+				if($content->getEntity()->id() == $current_nid){
+					$content->delete();
+				}
+			}
+		}
+		
+		// move to new group
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+		$group->addContent($node_data, 'group_node:mongodb_information');
+	}
+	
+	// add to group - first time
+	if(empty($old_group)){
+		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+		$group->addContent($node_data, 'group_node:mongodb_information');
+	}
+	
+	$response = mongodb_api_connect($form_state->getValue('nid'));
+	$json_result = json_decode($response, true);
+				
+		if ($json_result['success'] == 1) {
+			$_SESSION['mongodb_token'] = $json_result['token'];
+			$_SESSION['mongodb_nid'] = $form_state->getValue('nid');
+			drupal_set_message (t('Success - Mongo DB connection establised.'));
+			$redirect_url = $base_url . '/mongodb_api/listcollection';
+			$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+			$response->send();
+			return;
+		}
+		else {
+			$errormessage = "Invalid Database information.  No connection establised with <b>IP - " . $form_state->getValue('title')[0]['value'] . "</b> and <b> name - " . $form_state->getValue('field_db_name')[0]['value'] . "</b>"; 
+			drupal_set_message(t($errormessage), "error");
+	   }
+	
+}
+
+
+function mongodb_parseJSON($json_input)
+{
+	$json_output = '<input type="button" value="Copy JSON"><div class="container">
+    <div id="apiheader"><span>Expand JSON</span></div>
+	<div class="testcontent"><div id="copyToClipboard">Copy JSON</div><div class="json_container">' . $json_input . '</div></div>
+</div>';
+	return $json_output;
+}
+
+/*
+ * Implements hook_user_logout
+ */
+function mongodb_api_user_login(\Drupal\user\UserInterface $account) {
+	
+	// Default login destination over ride
+	$current_request = \Drupal::service('request_stack')->getCurrentRequest();
+	
+	if (strpos($_SERVER["HTTP_REFERER"], '/user/reset/') === false) {
+		if(in_array("datauser",\Drupal::currentUser()->getRoles())){
+			$current_request->query->set(
+			  'destination',
+			  \Drupal\Core\Url::fromRoute('mongodb_api.dataformslist')->toString()
+			);
+		}
+		
+		if(in_array("datamanager",\Drupal::currentUser()->getRoles())){
+			$current_request->query->set(
+			  'destination','mongodb-list'
+			);
+		}
+	}	
+}
+
+/*
+ * Implements hook_user_logout
+ */
+
+function mongodb_api_user_logout($account)
+{
+	if ($_SESSION['mongodb_token'] != "") {
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/close";
+		$api_param = array ("token" => $_SESSION['mongodb_token']);
+									 
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    $server_output = curl_exec ($ch);		
+		curl_close ($ch);
+		$_SESSION['mongodb_token'] = "";
+		$_SESSION['mongodb_nid'] = "";
+	  }
+}
+
+function mongodb_api_views_pre_render(\Drupal\views\ViewExecutable $view) {
+	
+  if($view->id() == 'mongodb_list'){
+	 
+    foreach($view->result as $value){
+     // kint($value->_entity->get('title')->value);
+	 
+	 $nid = $value->_entity->get('nid')->value;
+	 if ($_SESSION['mongodb_nid'] == $nid) {
+		 //$view->field['nothing']->options['alter']['text'] = 'My custom text';
+		$value->_entity->set('title', $value->_entity->get('title')->value . " " . " [ connected ]");
+		 
+	 }
+     //$value->_entity->set('title', $value->_entity->get('title')->value . " " . "<img src='http://tools.opsyd.com/img/greenlight.jpg' width='30px' height='30px'>");
+    }
+  }  
+}
+
+function mongodb_api_page_attachments(array &$attachments) {
+	$attachments['#attached']['library'][] = 'mongodb_api/mongodb_api.customjs';
+		
+	global $base_url;
+	
+	$group_id = $output_html = '';
+	$membership_loader = \Drupal::service('group.membership_loader');
+	if(!empty($membership_loader)){
+		foreach ($membership_loader->loadByUser(\Drupal::currentUser()) as $group_membership) {
+			$group_id = $group_membership->getGroup()->id();
+		}
+	}
+	
+	$webform_ids = array();
+	if(!empty($group_id)){
+		$group = Drupal\group\Entity\Group::load($group_id);
+		foreach($group->getContent() as $key => $content){
+			if(strpos($content->getGroupContentType()->id(), 'group_node-webform') !== false){
+				$nodeDetails = $content->getEntity();
+				$webform_ids[]  = $nodeDetails->get("webform")->getValue()[0]["target_id"];
+			}
+		}
+	}	
+	
+	if (count($webform_ids)) {				
+		foreach($webform_ids as $webform_id):
+			
+			$query = \Drupal::entityQuery('dataform')
+					->condition('field_web_form_id', $webform_id);
+			$df_ids = $query->execute();
+			foreach($df_ids as $df_id){
+				$dataform_id = $df_id;
+			} 
+			$dataform = Drupal\dataform\Entity\DataForm::load($dataform_id);
+			
+			$user_exists = $dataform->field_user_access_list->value;
+			$user_exists_array = explode(",",$user_exists);
+			
+			$collection_url = '';
+			if((in_array(\Drupal::currentUser()->id(),$user_exists_array)) || (in_array("datamanager",\Drupal::currentUser()->getRoles()))){
+				
+				$webform = \Drupal\webform\Entity\Webform::load($webform_id);
+				if($webform){
+					$urlredirect = Drupal\url_redirect\Entity\UrlRedirect::load('ur_' . $webform_id);
+					if (isset($urlredirect)) {			 
+						$collection_url = $urlredirect->get('path');			
+					}
+					
+					//$output_html .= "<div><a href='" . $base_url . "/" . $collection_url."'>". $webform->label(). "</a></div>";	
+					$output_html .= '<li class="menu-item" style="clear:both;"><a href="' . $base_url . '/' . $collection_url.'" data-drupal-link-system-path="dataforms">' . $webform->label(). '</a></li>';
+				}
+			}
+			
+		endforeach;				
+	}	
+	$attachments['#attached']['drupalSettings']['dataformlist'] = $output_html;
+}
+
+function checkConnectionStatus(){
+	if ($_SESSION['mongodb_token'] != "") {
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/isValidToken";
+		$api_param = array ("token" => $_SESSION['mongodb_token']);
+									 
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	    $server_output = curl_exec ($ch);		
+		curl_close ($ch);
+		
+		$isValidToken = json_decode($server_output);
+		
+		if(!$isValidToken->valid){
+			$_SESSION['mongodb_token'] = "";
+			$_SESSION['mongodb_nid'] = "";
+		}
+	}
+}
+
+function mongodb_api_connect($mongodb_nid){
+	if ($_SESSION['mongodb_token'] != "") {
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/close";
+		$api_param = array ("token" => $_SESSION['mongodb_token']);
+									 
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$server_output = curl_exec ($ch);		
+		curl_close ($ch);		
+		$_SESSION['mongodb_token'] = "";
+		$_SESSION['mongodb_nid'] = "";
+	}
+		
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/connect";
+	
+	$mongodb_node = node_load($mongodb_nid);
+	
+	$addr_port = $ssh_addr_port = '';
+	if(isset($mongodb_node->field_address_port->value))
+		$addr_port = ":".$mongodb_node->field_address_port->value;
+	if(isset($mongodb_node->field_ssh_address_port->value))
+		$ssh_addr_port = ":".$mongodb_node->field_ssh_address_port->value;
+	
+	if($mongodb_node->field_perform_authentication->value == 1 && $mongodb_node->field_use_ssh_tunnel->value == 0){
+		$api_param = array (
+			'host' => $mongodb_node->field_address->value.$addr_port,
+			'dbName' => $mongodb_node->field_database_name->value,
+			'requiredAuth' => true,
+			'username' => $mongodb_node->field_username->value,
+			'password' => $mongodb_node->field_password->value,
+			'authSource' => $mongodb_node->field_database->value
+		);
+	}else if($mongodb_node->field_use_ssh_tunnel->value == 1){
+		if ($mongodb_node->field_ssh_auth_method->value == "Password") {
+			$api_param = array (
+				'host' => $mongodb_node->field_address->value.$addr_port,
+				'dbName' => $mongodb_node->field_database_name->value,
+				'ssh'  => true,
+				'ssh_username' => $mongodb_node->field_ssh_username->value,
+				'ssh_password' => $mongodb_node->field_ssh_password->value
+			);
+		}else{
+			if(!empty($mongodb_node->field_upload_key->entity)){
+				$file_uri = $mongodb_node->field_upload_key->entity->getFileUri();
+			}
+			$api_param = array (
+				'host' => $mongodb_node->field_address->value.$addr_port,
+				'dbName' => $mongodb_node->field_database_name->value,
+				'ssh'  => true,
+				'ssh_username' => $mongodb_node->field_ssh_username->value,
+				'keyfile' => isset($file_uri) ? drupal_realpath($file_uri) : '',
+				'key_passphrase' => (isset($mongodb_node->field_key_passphrase->value) && !empty($mongodb_node->field_key_passphrase->value)) ? $mongodb_node->field_key_passphrase->value : '',
+			);
+		}
+		
+		if($mongodb_node->field_perform_authentication->value == 1){
+			$api_param['requiredAuth'] = true;
+			$api_param['username'] = $mongodb_node->field_username->value;
+			$api_param['password'] = $mongodb_node->field_password->value;
+			$api_param['authSource'] = $mongodb_node->field_database->value;
+		}
+		
+	}else{
+		$api_param = array (			
+			'host' => $mongodb_node->field_address->value.$addr_port,
+			'dbName' => $mongodb_node->field_database_name->value		
+		);
+	}
+	
+	drupal_set_message( "api-endpoing ==> ".print_r($api_endpointurl,true));
+	drupal_set_message( "api-param ==> ".print_r($api_param,true));
+
+	$headers = array("Content-Type:multipart/form-data"); // cURL headers for file uploading
+	$ch = curl_init();
+	$options = array(
+		CURLOPT_URL => $api_endpointurl,
+		CURLOPT_HEADER => true,
+		CURLOPT_POST => 1,
+		CURLOPT_HTTPHEADER => $headers,
+		CURLOPT_POSTFIELDS => $api_param,        
+		CURLOPT_RETURNTRANSFER => true
+	); 
+	curl_setopt_array($ch, $options);
+	$server_output = curl_exec ($ch);
+			
+	$response = $server_output;
+	$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+	$header = substr($response, 0, $header_size);
+	$body = substr($response, $header_size);
+	curl_close ($ch);
+	
+	return $body;
+}
+
+?>

@@ -1,1 +1,1 @@
-echo "OPSYD Base"
+OPSYD Base

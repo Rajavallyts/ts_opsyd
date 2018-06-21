@@ -1,0 +1,6 @@
+name: 'Data Form'
+type: module
+description: 'DataForm Entity Type and DataForm related fields'
+core: 8.x
+version: 1.0
+package: Custom
