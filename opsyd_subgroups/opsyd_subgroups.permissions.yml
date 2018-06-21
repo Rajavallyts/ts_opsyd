@@ -1,0 +1,19 @@
+add opsyd subgroups entities:
+  title: 'Create new Opsyd subgroups entities'
+
+administer opsyd subgroups entities:
+  title: 'Administer Opsyd subgroups entities'
+  description: 'Allow to access the administration form to configure Opsyd subgroups entities.'
+  restrict access: true
+
+delete opsyd subgroups entities:
+  title: 'Delete Opsyd subgroups entities'
+
+edit opsyd subgroups entities:
+  title: 'Edit Opsyd subgroups entities'
+
+view published opsyd subgroups entities:
+  title: 'View published Opsyd subgroups entities'
+
+view unpublished opsyd subgroups entities:
+  title: 'View unpublished Opsyd subgroups entities'

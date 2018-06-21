@@ -243,3 +243,11 @@ mongodb_api.addgroupuser:
       _title: 'Create a new user'
    requirements:
       _permission: 'administer mongodb_api'
+
+mongodb_api.addsubgroup:
+   path: '/addsubgroup'
+   defaults:
+      _form: '\Drupal\mongodb_api\Form\addsubgroupForm'
+      _title: 'Create a Subgroup'
+   requirements:
+      _permission: 'administer mongodb_api'

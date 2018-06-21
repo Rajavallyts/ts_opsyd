@@ -1,0 +1,22 @@
+# Opsyd subgroups routing definition
+opsyd_subgroups.settings_tab:
+  route_name: opsyd_subgroups.settings
+  title: 'Settings'
+  base_route: opsyd_subgroups.settings
+
+entity.opsyd_subgroups.canonical:
+  route_name: entity.opsyd_subgroups.canonical
+  base_route: entity.opsyd_subgroups.canonical
+  title: 'View'
+
+entity.opsyd_subgroups.edit_form:
+  route_name: entity.opsyd_subgroups.edit_form
+  base_route: entity.opsyd_subgroups.canonical
+  title: 'Edit'
+
+entity.opsyd_subgroups.delete_form:
+  route_name:  entity.opsyd_subgroups.delete_form
+  base_route:  entity.opsyd_subgroups.canonical
+  title: Delete
+  weight: 10
+

@@ -1,0 +1,5 @@
+name: 'opsyd_subgroups'
+type: module
+description: 'Used for subgroups'
+core: 8.x
+package: 'Custom'

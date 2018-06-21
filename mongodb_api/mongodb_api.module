@@ -563,6 +563,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	
 	drupal_set_message( "api-endpoing ==> ".print_r($api_endpointurl,true));
 	drupal_set_message( "api-param ==> ".print_r($api_param,true));
+	drupal_set_message( "api-nid ==> ".$mongodb_nid);
 
 	$headers = array("Content-Type:multipart/form-data"); // cURL headers for file uploading
 	$ch = curl_init();

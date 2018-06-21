@@ -70,38 +70,44 @@ mongodb_api.addgroupuser:
   base_route: mongodb_api.listcollection
   weight: 120  
   
+mongodb_api.addsubgroup:
+  route_name : mongodb_api.addsubgroup
+  title: Create Subgroup
+  base_route: mongodb_api.listcollection
+  weight: 130  
+  
 mongodb_api.searchmongodb:
   route_name: mongodb_api.search
   title: Search
   base_route: mongodb_api.listcollection
-  weight: 130
+  weight: 140
   
 mongodb_api.exportmongodb:
   route_name: mongodb_api.export
   title: Export
   base_route: mongodb_api.listcollection
-  weight: 140
+  weight: 150
   
 mongodb_api.importmongodb:
   route_name: mongodb_api.import
   title: Import
   base_route: mongodb_api.listcollection
-  weight: 150
+  weight: 160
   
 mongodb_api.closemdbconnection:
   route_name: mongodb_api.closeConnection
   title: Close
   base_route: mongodb_api.listcollection
-  weight: 160
+  weight: 170
 
 mongodb_api.dataformslist:
   route_name: mongodb_api.dataformslist
   title: Data Form List
   base_route: mongodb_api.dataformslist
-  weight: 170
+  weight: 180
 
 mongodb_api.dataformsdocument:
   route_name: mongodb_api.dataformsdocument
   title: Data Form Documents
   base_route: mongodb_api.dataformslist
-  weight: 180
+  weight: 190

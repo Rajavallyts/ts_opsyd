@@ -1,0 +1,5 @@
+entity.opsyd_subgroups.add_form:
+  route_name: entity.opsyd_subgroups.add_form
+  title: 'Add Opsyd subgroups'
+  appears_on:
+    - entity.opsyd_subgroups.collection

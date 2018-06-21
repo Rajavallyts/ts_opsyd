@@ -6,6 +6,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\group\Entity;
 use Drupal\group\Entity\Group;
 use Drupal\dataform\Entity\DataForm;
+use Drupal\opsyd_subgroups\Entity\OpsydSubgroups;
 
 class assigndataForm extends FormBase {
 
@@ -26,10 +27,11 @@ class assigndataForm extends FormBase {
 		
 		if ($_SESSION['mongodb_token'] != ""){
 			$form['add_user'] = [
-				'#markup' => '<a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addgroupuser">'.t("Create a New User").'</a>',
+				'#markup' => '<a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addsubgroup">'.t("Create a Subgroup").'</a>&nbsp;&nbsp;<a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addgroupuser">'.t("Create a New User").'</a>',
 			];
 			
 			$group_id = $_SESSION['group_id'];
+			
 			$cur_connection_id = $_SESSION['mongodb_nid'];
 			
 			$webform_array = $users_array = array();
@@ -70,6 +72,21 @@ class assigndataForm extends FormBase {
 			}
 		}
 		
+		$subgroup_list = array();
+		
+		$query = \Drupal::entityQuery('opsyd_subgroups')
+			->condition('status', 1)
+			->condition('field_parent_group_id', $group_id, '=');
+		$subgroups = $query->execute();
+		
+		if(!empty($subgroups)){
+			
+			foreach($subgroups as $subgroup_id){
+				$subgroup = OpsydSubgroups::load($subgroup_id);
+				$subgroup_list[$subgroup_id] = $subgroup->field_sub_group_name->value;
+			}
+		}
+			
 		$form['webforms'] = [
 			'#type' => 'select',
 			'#title' => t('Choose data forms'),
@@ -99,6 +116,14 @@ class assigndataForm extends FormBase {
 			'#multiple' => TRUE,
 			'#required' => TRUE,
 			'#options' => $users_array,
+			'#empty_option' => $this->t('Select'),
+		];
+
+		$form['subgroup'] = [
+			'#type' => 'select',
+			'#title' => t('Choose a Subgroup'),
+			'#multiple' => TRUE,
+			'#options' => $subgroup_list,
 			'#empty_option' => $this->t('Select'),
 		];
 
