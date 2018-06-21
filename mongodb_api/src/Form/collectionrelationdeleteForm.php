@@ -6,10 +6,6 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\collection_relations\Entity\CollectionRelations;
 
 use Drupal\Core\Ajax\AjaxResponse;
-/* use Drupal\Core\Ajax\ChangedCommand;
-use Drupal\Core\Ajax\InvokeCommand;
-use Drupal\Core\Ajax\CssCommand;
-use Drupal\Core\Ajax\HtmlCommand; */
 use Drupal\Core\Ajax\ReplaceCommand;
 use Drupal\Core\Ajax\AlertCommand;
 
@@ -32,11 +28,21 @@ class collectionrelationdeleteForm extends FormBase {
 			'#markup' => t('Are you sure you want to delete the collection relations ?')."<br/><br/>"
 		];
 		
-		$coll_ref = $_GET["coll_ref"];
-		$form['coll_ref'] = [
-			'#type' => 'hidden',
-			'#value' => $coll_ref
-		];
+		if(isset($_GET["coll_rel"])){
+			$coll_rel = $_GET["coll_rel"];
+			$form['coll_rel'] = [
+				'#type' => 'hidden',
+				'#value' => $coll_rel
+			];
+		}
+		
+		if(isset($_GET["field_rel"])){
+			$field_rel = $_GET["field_rel"];
+			$form['field_rel'] = [
+				'#type' => 'hidden',
+				'#value' => $field_rel
+			];
+		}
 		
 		$form['confirm_submit'] = [
 			'#type' => 'submit',
@@ -59,11 +65,15 @@ class collectionrelationdeleteForm extends FormBase {
 	public function submitForm(array &$form, FormStateInterface $form_state) {
 		global $base_url;
 		
-		$coll_ref = $form_state->getValue("coll_ref");
+		$coll_rel = $form_state->getValue("coll_rel");
+		$field_rel = $form_state->getValue("field_rel");
 	
 		$triggering_element = $form_state->getTriggeringElement()["#name"];	
 		if($triggering_element == "confirm_submit"){
-			$redirect_url = $base_url.'/mongodb_api/collectionrelation/delete?coll_ref='.$coll_ref;
+			if(!empty($coll_rel))
+				$redirect_url = $base_url.'/mongodb_api/collectionrelation/delete?coll_rel='.$coll_rel;
+			if(!empty($field_rel))
+				$redirect_url = $base_url.'/mongodb_api/collectionrelation/delete?field_rel='.$field_rel;
 			$response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
 			$response->send();
 			return;

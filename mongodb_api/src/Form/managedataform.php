@@ -6,7 +6,10 @@ use Drupal\Core\Form\FormStateInterface;
 use \Drupal\node\Entity\Node;
 use \Drupal\file\Entity\File;
 use Drupal\collection_relations\Entity\CollectionRelations;
-use Drupal\Core\Database\Database;
+use Drupal\collection_field_relation\Entity\CollectionFieldRelation;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Ajax\AlertCommand;
 
 class managedataform extends FormBase {
   /**
@@ -46,10 +49,6 @@ class managedataform extends FormBase {
 		}
 	}
 	
-	if($mongodb_collection != \Drupal::config('hms_setting.settings')->get('hms_collection_name') && $_SESSION["mongodb_nid"] != \Drupal::config('hms_setting.settings')->get('hms_connection_node')){
-		drupal_set_message("Your connection id and collection name is mismatching from hms settings configuration. Please check with your site administrator.","warning");
-	}
-		
 	if ($_SESSION['mongodb_token'] != ""){
 	  if (!empty($mongodb_collection) && !empty($webform_id)) {
 		  $webform = \Drupal\webform\Entity\Webform::load($webform_id);
@@ -85,14 +84,14 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		}
 
 		$form['#tree'] = TRUE;
-
+		
 		if($document_id)
 			$title_prefix = $this->t('Edit ');
 		else
 			$title_prefix = $this->t('Add ');
 
 		//if (count ($json_result) > 0 ) {	
-		$i=0;			
+		$i=0;
 		
 		$form['document'] = [
 			'#type' => 'fieldset',
@@ -109,7 +108,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					
 					$form['document'][$i]['dkey'] = array(
 						'#type' => 'hidden',
-						'#default_value' => $field,						
+						'#default_value' => $field,		
 					);
 					
 					if($webform_elements[$field]["#type"] == "details"){
@@ -123,11 +122,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						
 						// for "details field", again we need to add dkey
 						$form['document'][$i]['dkey'] = array(
-							'#type' => 'hidden',										
-							'#default_value' => $field,						
+								'#type' => 'hidden',										
+								'#default_value' => $field,						
 						);
-				
-						$form['document'][$i]['document'] = addsublevel($webform_elements[$field],(isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
+					
+						$form['document'][$i]['document'] = addsublevel($field, $webform_elements[$field],(isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
 						
 					}else if($webform_elements[$field]["#type"] == "select"){
 						$multiple_attr = '';
@@ -183,10 +182,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 								if(!empty($json_result[$field])){
 									// get existing fid
 									$isFile = \Drupal::database()->select("file_managed","f")
-									->fields("f",array("fid"))
-									->condition("uri",$json_result[$field],"=")
-									->execute()
-									->fetchAssoc();
+											->fields("f",array("fid"))
+											->condition("uri",$json_result[$field],"=")
+											->execute()
+											->fetchAssoc();
 									if(!empty($isFile))
 										$fid = $isFile;
 								}
@@ -201,9 +200,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$form['document'][$i]['image'] = array(			
 							'#type' => 'managed_file',				
 							'#title' => $field,
-								'#multiple' =>	$multiple_attr,
+							'#multiple' =>	$multiple_attr,
 							'#upload_location' => 's3://'.date("Y-m"), /* s3://2018-04 */
-								'#default_value' => $fid,
+							'#default_value' => $fid,
 						);
 						
 						$form['document'][$i]['image_info'] = array(			
@@ -212,7 +211,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						);
 						
 					}else if($webform_elements[$field]["#type"] == "element"){
-						
 						$multiple_attr = '';
 						if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 							$multiple_attr = 1;
@@ -232,32 +230,137 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$document_lists = curl_exec ($ch);		
 						curl_close ($ch);
 						$documents = json_decode($document_lists, true);
+						
+						// getting category relation
+						$query = \Drupal::entityQuery('collection_field_relation')
+								->condition('status', 1)
+								->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=')
+								->condition('field_collection_name', $mongodb_collection, '=')
+								->condition('field_category_key', $field, '=');
+						$coll_fields = $query->execute();
+						if(!empty($coll_fields)){
+							$coll_rel = CollectionFieldRelation::load(array_keys($coll_fields)[0]);
+							
+							$cat_key = $coll_rel->field_category_key->value;
+							if (strpos($cat_key, '.') !== false) {
+								$cat_keys = explode(".",$cat_key);
+								$cat_key = $cat_keys[count($cat_keys)-1];
+							}
+							
+							$sub_cat_key = $coll_rel->field_sub_category_key->value;
+							if (strpos($sub_cat_key, '.') !== false) {
+								$sub_cat_keys = explode(".",$sub_cat_key);
+								$sub_cat_key = $sub_cat_keys[count($sub_cat_keys)-1];
+							}
+							
+							/* $cat_collection = $coll_rel->field_category_collection->value; */
+							$sub_cat_collection = $coll_rel->field_sub_category_collection->value;
+						}
 
 						if($webform_elements[$field]["#field_type"] == 'select'){
-						$relative_options = array('' => 'Select');
-						foreach($documents as $document){
-							if(isset($document[$rel_value]))
-							$relative_options[$document[$rel_key]] = $document[$rel_value];
-						}
-						$form['document'][$i]['relational'] = array(			
-							'#type' => 'select',
-							'#title' => $field,
-							'#options' => $relative_options,
-							'#multiple' =>	$multiple_attr,
-							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-						);
-					}else{
+							
+							$relative_options = array('' => 'Select');
+							foreach($documents as $document){
+								if(isset($document[$rel_value]))
+									$relative_options[$document[$rel_key]] = $document[$rel_value];
+							}
+							if(isset($cat_key) && $cat_key == $field){
+								$cat_id = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+								$form['document'][$i]['relational_cat'] = array(			
+									'#type' => 'select',
+									'#title' => $field,
+									'#multiple' =>	$multiple_attr,
+									'#options' => $relative_options,
+									'#default_value' => $cat_id,
+									'#attributes' => array('data-attr-rel' => 'relational_doccat_'.($i+1)),
+									'#ajax'   => [
+										'callback' => '::getDependentCatListReplace'
+									]
+								);
+							}else if (isset($sub_cat_key) && $sub_cat_key == $field){
+								$form['document'][$i]['relational_subcat_coll'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_collection,
+								);
+								$form['document'][$i]['relational_subcat_key'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_key,
+								);
+								$form['document'][$i]['relational_subcat_value'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_value,
+								);
+								
+								$form['document'][$i]['relational_subcat'] = array(			
+									'#type' => 'select',
+									'#title' => $field,
+									'#multiple' =>	$multiple_attr,
+									//'#options' => $relative_options,
+									'#options' => getDependentCatList($rel_collection,$rel_key,$rel_value,"select",$cat_id),
+									'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+									'#prefix' => '<div id="relational_doccat_'.$i.'">',
+									'#suffix' => '</div>',
+									'#validated' => TRUE
+								);
+							}else{
+								$form['document'][$i]['relational'] = array(			
+									'#type' => 'select',
+									'#title' => $field,
+									'#multiple' =>	$multiple_attr,
+									'#options' => $relative_options,
+									'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
+								);
+							}
+						}else{
 							$relative_options = array();
 							foreach($documents as $document){
 								if(isset($document[$rel_value]))
 									$relative_options[$document[$rel_key]] = $document[$rel_value];
 							}
-							$form['document'][$i]['relational'] = array(			
-								'#type' => 'radios',
-								'#title' => $field,
-								'#options' => $relative_options,
-								'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-							);
+							if(isset($cat_key) && $cat_key == $field){
+								$cat_id = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+								$form['document'][$i]['relational_cat'] = array(			
+									'#type' => 'radios',
+									'#title' => $field,
+									'#options' => $relative_options,
+									'#default_value' => $cat_id,
+									'#attributes' => array('data-attr-rel' => 'relational_doccat_'.($i+1)),
+									'#ajax'   => [
+										'callback' => '::getDependentCatListReplace'
+									]
+								);
+							}else if (isset($sub_cat_key) && $sub_cat_key == $field){
+								$form['document'][$i]['relational_subcat_coll'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_collection,
+								);
+								$form['document'][$i]['relational_subcat_key'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_key,
+								);
+								$form['document'][$i]['relational_subcat_value'] = array(
+									'#type' => 'hidden',
+									'#default_value' => $rel_value,
+								);
+								
+								$form['document'][$i]['relational_subcat'] = array(			
+									'#type' => 'radios',
+									'#title' => $field,
+									//'#options' => $relative_options,
+									'#options' => getDependentCatList($rel_collection,$rel_key,$rel_value,"radio",$cat_id),
+									'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+									'#prefix' => '<div id="relational_doccat_'.$i.'">',
+									'#suffix' => '</div>',
+									'#validated' => TRUE
+								);
+							}else{
+								$form['document'][$i]['relational'] = array(			
+									'#type' => 'radios',
+									'#title' => $field,
+									'#options' => $relative_options,
+									'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
+								);
+							}
 						}
 					}else{
 						
@@ -331,12 +434,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							}
 							
 						}else{
-							$form['document'][$i]['dvalue'] = array(
-								'#type' => 'textfield',
-								'#title' => $field,
+						$form['document'][$i]['dvalue'] = array(
+							'#type' => 'textfield',
+							'#title' => $field,
 						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-							);
-						}
+						);
+					}
 					}
 				$i++;
 			//endif;
@@ -463,6 +566,38 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
     $form_state->setRebuild();
   }
   
+	public function getDependentCatListReplace(array &$form, FormStateInterface $form_state) {
+
+		$ajax_response = new AjaxResponse();
+		
+		$triggered_parents	= $form_state->getTriggeringElement()["#array_parents"];
+		$cat_id 			= $form_state->getTriggeringElement()["#value"];
+		$field_type 		= $form_state->getTriggeringElement()["#type"];
+		$replaceDiv 		= $form_state->getTriggeringElement()["#attributes"]["data-attr-rel"];
+		
+		$parents_counts = count($triggered_parents) - 3;
+		if($field_type == "select")
+			$parents_counts = count($triggered_parents) - 2;
+		$replace_element = $form;
+		for($m = 0; $m < $parents_counts; $m++){
+			$replace_element = $replace_element[$triggered_parents[$m]];
+		}
+		
+		$rel_collection		= $replace_element[$triggered_parents[$m]+1]["relational_subcat_coll"]['#default_value'];
+		$rel_key			= $replace_element[$triggered_parents[$m]+1]["relational_subcat_key"]['#default_value'];
+		$rel_value 			= $replace_element[$triggered_parents[$m]+1]["relational_subcat_value"]['#default_value'];
+		$replace_element	= $replace_element[$triggered_parents[$m]+1]["relational_subcat"];
+		
+		$replace_element["#options"] = getDependentCatList($rel_collection,$rel_key,$rel_value,$field_type,$cat_id);
+		
+		/* print "<pre>"; print_r($triggered_parents); print "</pre>";
+		print "<pre>---"; print_r($replace_element); print "</pre>"; */
+		//print "<pre>"; print_r($cat_id); print "</pre>";
+		
+		$ajax_response->addCommand(new ReplaceCommand('#'.$replaceDiv,$replace_element));
+
+		return $ajax_response;
+	}
 
 /*
 * {@inheritdoc}
@@ -485,25 +620,21 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 	}
 	$file_upload = $all_files["image"];
 	$uri = file_unmanaged_move($file_upload->getRealPath(), 's3://'.date("Y-m")); */
-	$email_id = "";
+
 	 foreach($document_values as $document_value)
 	 {
 		if(isset($document_value['document']) && count($document_value['document']) > 0){
+
 			$updateWith .= '"' . $document_value['dkey'] . '":{';
 			$updateWith .= addsublevel_submit($document_value['document']);
 			$updateWith .= "},";
 		}else{
-			if (isset($document_value['dvalue'])) {
-				 if ($document_value['dvalue'] != "") {
-					$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['dvalue'] . '",';
-					if(!empty(\Drupal::config('hms_setting.settings')->get('hms_collection_name'))){
-						if ($document_value['dkey'] == "email" && $mongodb_collection == \Drupal::config('hms_setting.settings')->get('hms_collection_name') && $_SESSION["mongodb_nid"] == \Drupal::config('hms_setting.settings')->get('hms_connection_node')) {
-							$email_id = $document_value['dvalue'];
-						}
-					}
-				 }
-			}
-					 
+		 if (isset($document_value['dvalue'])) {
+			 if ($document_value['dvalue'] != "") {
+				$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['dvalue'] . '",';
+			 }
+		 }
+		 
 			 if (isset($document_value['names_fieldset'])) {
 				 if ($document_value['names_fieldset'] != "") {
 					$dval_txt = '';
@@ -512,18 +643,18 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 					}
 					$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($dval_txt,",") . '],';
 				 }
-			}
-			 
-			 if (isset($document_value['checkbox'])) {
-				 if ($document_value['checkbox'] == 1) {
-						$updateWith .= '"' . $document_value['dkey'] . '":true,';
-				 }
-				 
-				 if ($document_value['checkbox'] == 0) {
-						$updateWith .= '"' . $document_value['dkey'] . '":false,';
-				 }
+			 }
+					 
+		 if (isset($document_value['checkbox'])) {
+			 if ($document_value['checkbox'] == 1) {
+					$updateWith .= '"' . $document_value['dkey'] . '":true,';
 			 }
 			 
+			 if ($document_value['checkbox'] == 0) {
+					$updateWith .= '"' . $document_value['dkey'] . '":false,';
+			 }
+		 }
+		 
 			 if (isset($document_value['select'])) {
 				 if(!empty($document_value['select'])){
 					 if(is_array($document_value['select'])){
@@ -539,7 +670,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 					$updateWith .= '"' . $document_value['dkey'] . '":"",';
 				 }
 			 }
-				 
+			 
 			 if (isset($document_value['relational'])) {
 				 if(!empty($document_value['relational'])){
 					 if(is_array($document_value['relational'])){
@@ -555,53 +686,85 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 					$updateWith .= '"' . $document_value['dkey'] . '":"",';
 				 }
 			 }
-				 
-			 if (isset($document_value['image'])) {
-				if(is_array($document_value['image']) && $document_value['image_info'] == 1){
-					$file_uri = '';
-					if(!empty($document_value['image'])){
-						foreach($document_value['image'] as $image){
-						 
-							// set file status permanent
-							$con = \Drupal\Core\Database\Database::getConnection();
-							$con->update('file_managed')
-								->fields(['status' => 1])
-								->condition('fid',$image,"=")
-								->execute();
-
-							// get file uri
-							$file_source = \Drupal::database()->select("file_managed","f")
-							->fields("f",array("uri"))
-							->condition("fid",$image,"=")
-							->execute()
-							->fetchAssoc();
-							$file_uri .= '"' . $file_source["uri"].'",';
+			 
+			 if (isset($document_value['relational_cat'])) {
+				 if(!empty($document_value['relational_cat'])){
+					 if(is_array($document_value['relational_cat'])){
+						$selected_value = '';
+						foreach($document_value['relational_cat'] as $select_val){
+							$selected_value .= '"' . $select_val.'",';
 						}
-						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
-					}else
-						$updateWith .= '"' . $document_value['dkey'] . '":[],';
-				}else{
-					if(!empty($document_value['image'])){
-						$file_source = array();
+						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($selected_value,",") . '],';
+					 }else{
+						$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['relational_cat'] . '",';
+					 }
+				 }else{
+					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				 }
+			 }
+			 
+			 if (isset($document_value['relational_subcat'])) {
+				 if(!empty($document_value['relational_subcat'])){
+					 if(is_array($document_value['relational_subcat'])){
+						$selected_value = '';
+						foreach($document_value['relational_subcat'] as $select_val){
+							$selected_value .= '"' . $select_val.'",';
+						}
+						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($selected_value,",") . '],';
+					 }else{
+						$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['relational_subcat'] . '",';
+					 }
+				 }else{
+					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				 }
+			 }
+			 
+		 if (isset($document_value['image'])) {
+			if(is_array($document_value['image']) && $document_value['image_info'] == 1){
+				$file_uri = '';
+				if(!empty($document_value['image'])){
+					foreach($document_value['image'] as $image){
+					 
 						// set file status permanent
 						$con = \Drupal\Core\Database\Database::getConnection();
 						$con->update('file_managed')
 							->fields(['status' => 1])
-							->condition('fid',$document_value['image'][0],"=")
+							->condition('fid',$image,"=")
 							->execute();
 
 						// get file uri
 						$file_source = \Drupal::database()->select("file_managed","f")
 									->fields("f",array("uri"))
-									->condition("fid",$document_value['image'][0],"=")
+									->condition("fid",$image,"=")
 									->execute()
 									->fetchAssoc();
-						$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
-					}else
-						$updateWith .= '"' . $document_value['dkey'] . '":"",';
-				}
-			 }
-		}
+						$file_uri .= '"' . $file_source["uri"].'",';
+					}
+					$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
+				}else
+					$updateWith .= '"' . $document_value['dkey'] . '":[],';
+			}else{
+				if(!empty($document_value['image'])){
+					$file_source = array();
+					// set file status permanent
+					$con = \Drupal\Core\Database\Database::getConnection();
+					$con->update('file_managed')
+						->fields(['status' => 1])
+						->condition('fid',$document_value['image'][0],"=")
+						->execute();
+
+					// get file uri
+					$file_source = \Drupal::database()->select("file_managed","f")
+								->fields("f",array("uri"))
+								->condition("fid",$document_value['image'][0],"=")
+								->execute()
+								->fetchAssoc();
+					$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
+				}else
+					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+			}
+		 }
+	   }
 	}
 	$updateWith = substr($updateWith,0, strlen($updateWith)-1) . "}";
 	
@@ -609,7 +772,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 		$existing_data = json_decode($form_state->getValue("doc_json"));
 		$form_data = json_decode($updateWith);
 		
-		foreach($form_data as $key => $data){
+		foreach($form_data as $key => $data){	
 			if(is_object($data)){
 				$existing_data->$key = (object) subdoc_replace($data,$existing_data->$key);
 			}else
@@ -633,62 +796,20 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			"document" => $updateWith
 		);
 	}
-									 
+	
 	 $ch = curl_init();
 	 curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
 	 curl_setopt($ch, CURLOPT_POST, 1);
 	 curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
 	 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	 $server_output = curl_exec ($ch);
-	 curl_close ($ch);
+	curl_close ($ch);
 		 
-	drupal_set_message($server_output);
 	if(!empty($document_id))
 		 drupal_set_message("Changes updated successfully");
-	else{
-		drupal_set_message("New data added successfully");
-		$json_result = json_decode($server_output, true);
-		
-		if ($email_id != "") {
-
-			// generating tokens
-			$api_endpointurl = "https://app.hms.movmobile.com/api/v1/sessions/email/registration-confirmation";
-			$api_param = array ( "email" => $email_id);
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			$server_output = curl_exec ($ch);		
-			curl_close ($ch);
-			$token_result = json_decode($server_output, true);
-			if(isset($token_result["success"])){
-			
-				$mailManager = \Drupal::service('plugin.manager.mail');
-				$module = "hms_userimport";
-				$key = 'newuser_otp';
-				$to = $email_id;
-				$params['email_subject'] = "HMS OPSYD - New user account";
-				$token = sha1(uniqid($email_id, true));
-				//$token = $token_result["data"]["token"];
-				
-				$params['message'] = $token;	
-				$langcode = \Drupal::currentUser()->getPreferredLangcode();
-				$send = true;
-				
-				$result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
-				$connection = Database::getConnection();
-				//$connection->query("INSERT INTO opsyd_hms_users (token, email, tstamp, objectid) VALUES ('$token', '" . $email_id . "', ".$_SERVER["REQUEST_TIME"].", '".$json_result['objectID']."')");
-				$connection->query("INSERT INTO opsyd_hms_users (token, email, tstamp) VALUES ('$token', '" . $email_id . "', ".$_SERVER["REQUEST_TIME"].")");
-			}else{
-				drupal_set_message(t("Unable to send email from drupal interface."),"error");
-				drupal_set_message($token_result["message"],"error");
-				foreach($token_result["errors"] as $error_msg){
-					drupal_set_message($error_msg["message"],"error");
-				}
-			}
-		}
-	}
+	else
+		drupal_set_message("New data added successfully");  
+	drupal_set_message($server_output);
 		
 	$current_user = \Drupal::currentUser();
 	$roles = $current_user->getRoles();	
@@ -697,9 +818,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	else
 		$redirect_url = $base_url . '/mongodb_api/listdataformdocument?mongodb_collection='.$mongodb_collection."&webform_id=".$webform_id;
 		
-	  $response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
-	  $response->send();
-	  return;
+			  $response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+			  $response->send();
+		      return;
   }  
   
   
@@ -773,6 +894,38 @@ function addsublevel_submit($document_values){
 				 }
 			 }
 			 
+			 if (isset($document_value['relational_cat'])) {
+				 if(!empty($document_value['relational_cat'])){
+					 if(is_array($document_value['relational_cat'])){
+						$selected_value = '';
+						foreach($document_value['relational_cat'] as $select_val){
+							$selected_value .= '"' . $select_val.'",';
+						}
+						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($selected_value,",") . '],';
+					 }else{
+						$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['relational_cat'] . '",';
+					 }
+				 }else{
+					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				 }
+			 }
+			 
+			 if (isset($document_value['relational_subcat'])) {
+				 if(!empty($document_value['relational_subcat'])){
+					 if(is_array($document_value['relational_subcat'])){
+						$selected_value = '';
+						foreach($document_value['relational_subcat'] as $select_val){
+							$selected_value .= '"' . $select_val.'",';
+						}
+						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($selected_value,",") . '],';
+					 }else{
+						$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['relational_subcat'] . '",';
+					 }
+				 }else{
+					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				 }
+			 }
+			 
 			 if (isset($document_value['image'])) {
 				if(is_array($document_value['image']) && $document_value['image_info'] == 1){
 					if(!empty($document_value['image'])){
@@ -806,13 +959,13 @@ function addsublevel_submit($document_values){
 							->fields(['status' => 1])
 							->condition('fid',$document_value['image'][0],"=")
 							->execute();
-				
+
 						// get file uri
 						$file_source = \Drupal::database()->select("file_managed","f")
-							->fields("f",array("uri"))
+									->fields("f",array("uri"))
 									->condition("fid",$document_value['image'][0],"=")
-							->execute()
-							->fetchAssoc();
+									->execute()
+									->fetchAssoc();
 						$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
 					}else
 						$updateWith .= '"' . $document_value['dkey'] . '":"",';
@@ -824,8 +977,9 @@ function addsublevel_submit($document_values){
 	return substr($updateWith,0, strlen($updateWith)-1);
 }
 
-function addsublevel($webform_elements, $json_result = array(), $form_state)
+function addsublevel($parentField, $webform_elements, $json_result = array(), $form_state)
 {
+	$mongodb_collection = $_SESSION["data_mongodb_collection"];
 	$j=0;
 	
 	$webform_elements_keys = array_keys_multi($webform_elements);
@@ -852,7 +1006,7 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 					'#default_value' => $field,						
 				);
 				
-				$form[$j]['document'] = addsublevel($webform_elements[$field],(isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
+				$form[$j]['document'] = addsublevel($field, $webform_elements[$field],(isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
 				
 			}else if($webform_elements[$field]["#type"] == "select"){
 				$multiple_attr = '';
@@ -908,10 +1062,10 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 						if(!empty($json_result[$field])){
 							// get existing fid
 							$isFile = \Drupal::database()->select("file_managed","f")
-								->fields("f",array("fid"))
-								->condition("uri",$json_result[$field],"=")
-								->execute()
-								->fetchAssoc();
+									->fields("f",array("fid"))
+									->condition("uri",$json_result[$field],"=")
+									->execute()
+									->fetchAssoc();
 							if(!empty($isFile))
 								$fid = $isFile;
 						}
@@ -954,32 +1108,139 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$document_lists = curl_exec ($ch);		
 				curl_close ($ch);
 				$documents = json_decode($document_lists, true);
+				
+				// getting category relation
+				$query = \Drupal::entityQuery('collection_field_relation')
+						->condition('status', 1)
+						->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=')
+						->condition('field_collection_name', $mongodb_collection, '=')
+						->condition('field_category_key', $parentField.".".$field, '=');
+				$coll_fields = $query->execute();
+				if(!empty($coll_fields)){
+					$coll_rel = CollectionFieldRelation::load(array_keys($coll_fields)[0]);
+					
+					$cat_key = $coll_rel->field_category_key->value;
+					if (strpos($cat_key, '.') !== false) {
+						$cat_keys = explode(".",$cat_key);
+						$cat_key = $cat_keys[count($cat_keys)-1];
+					}
+					
+					$sub_cat_key = $coll_rel->field_sub_category_key->value;
+					if (strpos($sub_cat_key, '.') !== false) {
+						$sub_cat_keys = explode(".",$sub_cat_key);
+						$sub_cat_key = $sub_cat_keys[count($sub_cat_keys)-1];
+					}
+					
+					/* $cat_collection = $coll_rel->field_category_collection->value; */
+					$sub_cat_collection = $coll_rel->field_sub_category_collection->value;
+				}
 
 				if($webform_elements[$field]["#field_type"] == 'select'){
-				$relative_options = array('' => 'Select');
-				foreach($documents as $document){
-					if(isset($document[$rel_value]))
-					$relative_options[$document[$rel_key]] = $document[$rel_value];
-				}
-				$form[$j]['relational'] = array(			
-					'#type' => 'select',
-					'#title' => $field,
-					'#multiple' =>	$multiple_attr,
-					'#options' => $relative_options,
-					'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-				);
+					
+					$relative_options = array('' => 'Select');
+					foreach($documents as $document){
+						if(isset($document[$rel_value]))
+							$relative_options[$document[$rel_key]] = $document[$rel_value];
+					}
+					if(isset($cat_key) && $cat_key == $field){
+						$cat_id = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+						$form[$j]['relational_cat'] = array(			
+							'#type' => 'select',
+							'#title' => $field,
+							'#multiple' =>	$multiple_attr,
+							'#options' => $relative_options,
+							'#default_value' => $cat_id,
+							'#attributes' => array('data-attr-rel' => 'relational_subdoc_cat_'.($j+1)),
+							'#ajax'   => [
+								'callback' => '::getDependentCatListReplace'
+							]
+						);
+					}else if (isset($sub_cat_key) && $sub_cat_key == $field){
+						
+						$form[$j]['relational_subcat_coll'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_collection,
+						);
+						$form[$j]['relational_subcat_key'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_key,
+						);
+						$form[$j]['relational_subcat_value'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_value,
+						);
+						
+						$form[$j]['relational_subcat'] = array(
+							'#type' => 'select',
+							'#title' => $field,
+							'#multiple' =>	$multiple_attr,
+							//'#options' => $relative_options,
+							'#options' => getDependentCatList($rel_collection,$rel_key,$rel_value,"select",$cat_id),
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+							'#prefix' => '<div id="relational_subdoc_cat_'.$j.'">',
+							'#suffix' => '</div>',
+							'#validated' => TRUE
+						);
+					}else{
+						$form[$j]['relational'] = array(
+							'#type' => 'select',
+							'#title' => $field,
+							'#multiple' =>	$multiple_attr,
+							'#options' => $relative_options,
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
+						);
+					}
 				}else{
 					$relative_options = array();
 					foreach($documents as $document){
 						if(isset($document[$rel_value]))
 							$relative_options[$document[$rel_key]] = $document[$rel_value];
 					}
-					$form[$j]['relational'] = array(			
-						'#type' => 'radios',
-						'#title' => $field,
-						'#options' => $relative_options,
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-					);
+					if(isset($cat_key) && $cat_key == $field){
+						$cat_id = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+						$form[$j]['relational_cat'] = array(			
+							'#type' => 'radios',
+							'#title' => $field,
+							'#options' => $relative_options,
+							'#default_value' => $cat_id,
+							'#attributes' => array('data-attr-rel' => 'relational_subdoc_cat_'.($j+1)),
+							'#ajax'   => [
+								'callback' => '::getDependentCatListReplace',
+							]
+						);
+					}else if (isset($sub_cat_key) && $sub_cat_key == $field){
+						
+						$form[$j]['relational_subcat_coll'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_collection,
+						);
+						$form[$j]['relational_subcat_key'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_key,
+						);
+						$form[$j]['relational_subcat_value'] = array(
+							'#type' => 'hidden',
+							'#default_value' => $rel_value,
+						);
+						
+						$form[$j]['relational_subcat'] = array(			
+							'#type' => 'radios',
+							'#title' => $field,
+							//'#options' => $relative_options,
+							'#options' => getDependentCatList($rel_collection,$rel_key,$rel_value,"radio",$cat_id),
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+							'#prefix' => '<div id="relational_subdoc_cat_'.$j.'">',
+							'#suffix' => '</div>',
+							'#validated' => TRUE
+						);
+					}else{
+						$form[$j]['relational'] = array(			
+							'#type' => 'radios',
+							'#title' => $field,
+							'#options' => $relative_options,
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
+						);
+					}
 				}
 			}else{
 				
@@ -1053,10 +1314,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					
 				}else{
 					$form['document'][$j]['dvalue'] = array(
-					'#type' => 'textfield',
-					'#title' => $field,
+						'#type' => 'textfield',
+						'#title' => $field,
 						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-				);
+					);
 				}
 			}
 			$j++;
@@ -1064,6 +1325,37 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	endforeach;	 
 
 	return $form;
+}
+
+function getDependentCatList($rel_collection,$rel_key,$rel_value,$field_type,$cat_id) {
+	$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/". $rel_collection."/find";
+	$api_param = array ( "token" => $_SESSION['mongodb_token']);
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	$document_lists = curl_exec ($ch);		
+	curl_close ($ch);
+	
+	$subcat_lists = array();
+	if($field_type == "select")
+		$subcat_lists = array('' => 'select');
+	if (strpos(strtolower($document_lists), $cat_id) > 0) {
+		$documents = json_decode($document_lists, true);
+		foreach($documents as $doc){								
+			$json_obj = json_encode($doc);
+			if (strpos(strtolower($json_obj),$cat_id) > 0 ) {
+				foreach ($doc as $resultkey => $resultValue):				
+					if ($resultkey == $rel_key) {
+						$subcat_lists[$doc[$resultkey]] = $doc[$rel_value];
+					}
+				endforeach;
+			}
+		}
+	}
+	
+	return $subcat_lists;
 }
 
 function subdoc_replace($values,$exist_data){

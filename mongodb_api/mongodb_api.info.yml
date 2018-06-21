@@ -13,4 +13,4 @@ dependencies:
   - 'url_redirect:url_redirect'
   - 'superfish:superfish'
   - 'dataform:dataform'
-  - 'collection_relations:collection_relations'
+  - 'collection_field_relation:collection_field_relation'

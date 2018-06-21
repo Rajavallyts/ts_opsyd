@@ -42,7 +42,7 @@ class collectionsettingForm extends FormBase {
 			$webform_id = $_SESSION["data_webform_id"];
 		}
 	}
-
+	
 if ($_SESSION['mongodb_token'] != ""){
 	if (!empty($mongodb_collection)) {
 		  $webform = \Drupal\webform\Entity\Webform::load($webform_id);
@@ -64,21 +64,21 @@ if ($_SESSION['mongodb_token'] != ""){
 		  }
 		  
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/find";
-          $api_param = array ( "token" => $_SESSION['mongodb_token']);
-		  $ch = curl_init();
-		  curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-		  curl_setopt($ch, CURLOPT_POST, 1);
-		  curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-		  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		  $server_output = curl_exec ($ch);		
-		  curl_close ($ch);
-		  
-		  $json_results = json_decode($server_output, true);
-		  
-		  $new_json = array();
-		  foreach($json_results as $json_result){
-			$new_json = array_merge_recursive($new_json,$json_result);
-		  }
+	  $api_param = array ( "token" => $_SESSION['mongodb_token']);
+	  $ch = curl_init();
+	  curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+	  curl_setopt($ch, CURLOPT_POST, 1);
+	  curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+	  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	  $server_output = curl_exec ($ch);		
+	  curl_close ($ch);
+	  
+	  $json_results = json_decode($server_output, true);
+	  
+	  $new_json = array();
+	  foreach($json_results as $json_result){
+		$new_json = array_merge_recursive($new_json,$json_result);
+	  }
 		
       $form['#tree'] = TRUE;
 	  $form['#attached']['library'][] = 'mongodb_api.customcss'; 	  
@@ -127,44 +127,44 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		$json_result = $new_json;
 		$i=0;
 		foreach($json_result as $resultkey => $resultValue):
-
+	
 			if (($resultkey != "_id")) {						
 					
 				if (is_array($resultValue) && is_asso($resultValue)){
-							$form['document'][$i] = [
-							'#type' => 'details',
-								'#title' => $resultkey ,
-							'#prefix' => '<div class="clearboth">',
-								'#suffix' => '</div>',
-							'#open' => TRUE,
-							];							
+					$form['document'][$i] = [
+						'#type' => 'details',
+						'#title' => $resultkey ,
+						'#prefix' => '<div class="clearboth">',
+						'#suffix' => '</div>',
+						'#open' => TRUE,
+					];							
 						
-						if(isset($webform_elements[$resultkey])){
-							$sub_webform_elements_key = array_keys_multi($webform_elements[$resultkey]);
-							$sub_webform_elements = $webform_elements[$resultkey];
-						}else{
-							$sub_webform_elements_key = $sub_webform_elements = array();
-						}
-						
+					if(isset($webform_elements[$resultkey])){
+						$sub_webform_elements_key = array_keys_multi($webform_elements[$resultkey]);
+						$sub_webform_elements = $webform_elements[$resultkey];
+					}else{
+						$sub_webform_elements_key = $sub_webform_elements = array();
+					}
+					
 						$form['document'][$i]['document'] = addsublevel($resultkey, $resultValue, $resultkey, $sub_webform_elements, $sub_webform_elements_key);
-							
-						} else {
-							$form['document'][$i]['webform_select'] = array(
-					'#type' => 'checkbox',				
-					'#prefix' => '<div class="clearboth">',    
-					'#theme_wrappers' => array(),	
-					'#default_value' => in_array($resultkey, $webform_elements_key) ? true : false,
+						
+				} else {
+					$form['document'][$i]['webform_select'] = array(
+						'#type' => 'checkbox',				
+						'#prefix' => '<div class="clearboth">',    
+						'#theme_wrappers' => array(),	
+						'#default_value' => in_array($resultkey, $webform_elements_key) ? true : false,
 						'#attributes' => array('data-attr' => 'firstlevel'),
-				);
+					);
 				
-				$form['document'][$i]['key'] = array(
+					$form['document'][$i]['key'] = array(
 						'#type' => 'textfield',      
 						'#required' => FALSE,
 						'#default_value' => $resultkey,	 
 						'#class' => 'value-field',
 						'#attributes' => array('style' => 'float: left; max-width: 250px; margin: 10px;','disabled' => 'disabled'),					   					
 						'#theme_wrappers' => array(),
-						'#size' => 2000,					
+						'#size' => 2000,
 					);
 					
 					$query = \Drupal::entityQuery('collection_relations')
@@ -192,28 +192,28 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						'textarea' => 'Textarea',
 						'select' => 'Dropdown',
 						'boolean' => 'Boolean',
-							'webform_image_file' => 'File',
+						'webform_image_file' => 'File',
 							//'generic_element' => t('Collection Relation'),
 					],
 					'#class' => 'value-field',					
 					'#theme_wrappers' => array(),		
-						'#attributes' => array('style' => 'float: left;', 'class' => array('formfieldformat'), 'disabled' => $disabledAttr),
+					'#attributes' => array('style' => 'float: left;', 'class' => array('formfieldformat'), 'disabled' => $disabledAttr),
 				);
 					
 				$options = array();					
 				$multiple_check = false;
 				if (isset($webform_elements[$resultkey])) {		
 					if ($webform_elements[$resultkey]['#type']	== 'select') {
-							$form['document'][$i]['field_format']['#default_value'] = 'select';
-							foreach ($webform_elements[$resultkey]['#options'] as $okey => $ovalue):
-								$options[] = $ovalue;
-							endforeach;
+						$form['document'][$i]['field_format']['#default_value'] = 'select';
+						foreach ($webform_elements[$resultkey]['#options'] as $okey => $ovalue):
+							$options[] = $ovalue;
+						endforeach;
 							
 							if(isset($webform_elements[$resultkey]["#multiple"]) && $webform_elements[$resultkey]["#multiple"] == 1)
 								$multiple_check = true;
-						}else if ($webform_elements[$resultkey]['#type']	== 'checkbox') {
-							$form['document'][$i]['field_format']['#default_value'] = 'boolean';
-						}else {					
+					}else if ($webform_elements[$resultkey]['#type'] == 'checkbox') {
+						$form['document'][$i]['field_format']['#default_value'] = 'boolean';
+					}else {					
 						if(isset($webform_elements[$resultkey]["#multiple"]) && $webform_elements[$resultkey]["#multiple"] == 1)
 							$multiple_check = true;
 						$form['document'][$i]['field_format']['#default_value'] = $webform_elements[$resultkey]['#type'];
@@ -247,7 +247,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#prefix' => '<div class="multiple_check">',
 					'#suffix' => '</div>'
 				);
-				
+					
 				$form['document'][$i]['dropdown_options'] = array(
 					'#type' => 'textfield',				
 					'#default_value' => implode(",", $options),
@@ -256,24 +256,24 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#suffix' => '</div>'							
 				);
 
-					if(!empty($coll_ids)){
-						$form['document'][$i]['field_format']['#options']['generic_element'] = t('Collection Relation');
-						$form['document'][$i]['field_format']['#default_value'] = 'generic_element';
-						
-						$form['document'][$i]['entity_id'] = array(
-							'#type' => 'hidden',
-							'#default_value' => array_keys($coll_ids)[0],	 					
-						);
-						
-						$form['document'][$i]['relative_entity'] = array(
-							'#type' => 'textfield',
-							'#default_value' => $rel_collection,
-							'#class' => 'value-field',
-							'#attributes' => array('style' => 'float: left; max-width: 250px; margin: 10px;','disabled' => TRUE),					   					
-							'#theme_wrappers' => array(),
-							'#size' => 2000,									
-						);
-					}
+				if(!empty($coll_ids)){
+					$form['document'][$i]['field_format']['#options']['generic_element'] = t('Collection Relation');
+					$form['document'][$i]['field_format']['#default_value'] = 'generic_element';
+					
+					$form['document'][$i]['entity_id'] = array(
+						'#type' => 'hidden',
+						'#default_value' => array_keys($coll_ids)[0],	 					
+					);
+					
+					$form['document'][$i]['relative_entity'] = array(
+						'#type' => 'textfield',
+						'#default_value' => $rel_collection,
+						'#class' => 'value-field',
+						'#attributes' => array('style' => 'float: left; max-width: 250px; margin: 10px;','disabled' => TRUE),					   					
+						'#theme_wrappers' => array(),
+						'#size' => 2000,									
+					);
+				}
 				
 				$form['document'][$i]['end_div'] = array(
 					'#markup' => '',							
@@ -370,10 +370,10 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					}
 					
 					$webform_elements[$document_value['key']] = [
-					'#title' => $document_value['key'],
-					'#type' => $document_value['field_format'],				
+						'#title' => $document_value['key'],
+						'#type' => $document_value['field_format'],				
 						'#multiple' =>	$multiple_attr,					
-					'#options' => $dropdown_options,
+						'#options' => $dropdown_options,
 					];
 				}elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$document_value['key']] = [
@@ -386,7 +386,7 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					'#type' => 'webform_image_file',				
 					'#multiple' =>	$multiple_attr,				
 					'#uri_scheme' => 's3'
-					];
+					];					
 				}elseif ($document_value['field_format'] == 'generic_element') {
 					$webform_elements[$document_value['key']] = [
 					'#type' => 'element',
@@ -409,12 +409,12 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 			} else {
 				
 				if(array_find_deep($document_value['document'],1)){
-				$webform_elements[$document_value['document']['key']]= [
-					'#title' => $document_value['document']['key'],
-					'#type' => 'details',
-					'#open' => TRUE,
-				];
-				addsublevel_submit($document_value['document']['key'],$document_value['document'],$webform_elements);
+					$webform_elements[$document_value['document']['key']]= [
+						'#title' => $document_value['document']['key'],
+						'#type' => 'details',
+						'#open' => TRUE,
+					];
+					addsublevel_submit($document_value['document']['key'],$document_value['document'],$webform_elements);
 				}
 				//array_push($webform_elements,addsublevel_submit($document_value['document']['key'],$document_value['document']));
 			}			
@@ -660,7 +660,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 					$relative_field_format = $webform_elements[$key]["#field_type"];
 				
 				$form[$j]['relative_field_format'] = array(
-					'#type' => 'select',      
+					'#type' => 'select',
 					'#required' => FALSE,
 					'#options' => [
 						'radio' => 'Radio',
@@ -721,7 +721,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
   }
   
 function addsublevel_submit($doc_key, $document_values, &$webform_elements){
-	//$webform_elements = [];	
+	//$webform_elements = [];
 
 	foreach($document_values as $document_key => $document_value):
 	//kint ($document_key);
