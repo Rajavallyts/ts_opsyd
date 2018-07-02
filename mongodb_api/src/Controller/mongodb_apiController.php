@@ -419,8 +419,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 									}
 								}
 						
+							$header_title = (isset($webform_elements[$field]["#title"]) && !empty($webform_elements[$field]["#title"])) ? $webform_elements[$field]["#title"] : $field;
 							if($webform_elements[$field]["#type"] != "details") // && !is_array($json_result[0][$field])
-								$output_html .= "<th>" . $field . "</th>";
+								$output_html .= "<th>" . $header_title . "</th>";
 							else
 								$hide_column[] = $field;
 						endforeach;

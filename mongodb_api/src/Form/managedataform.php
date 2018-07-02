@@ -112,10 +112,16 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						'#default_value' => $field,						
 					);
 					
+					$required_attr = '';
+					if(isset($webform_elements[$field]["#required"]) && $webform_elements[$field]["#required"] == 1)
+						$required_attr = 1;
+					
+					$field_label = (isset($webform_elements[$field]["#title"]) && !empty($webform_elements[$field]["#title"])) ? $webform_elements[$field]["#title"] : ucfirst($field);
+					
 					if($webform_elements[$field]["#type"] == "details"){
 						$form['document'][$i] = [
 							'#type' => 'details',
-							'#title' => $field ,
+							'#title' => $field,
 							'#prefix' => '<div class="clearboth">',
 							'#suffix' => '</div>',
 							'#open' => TRUE,
@@ -127,7 +133,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							'#default_value' => $field,						
 						);
 				
-						$form['document'][$i]['document'] = addsublevel($webform_elements[$field],(isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
+						$form['document'][$i]['document'] = addsublevel($field, $webform_elements[$field],(isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
 						
 					}else if($webform_elements[$field]["#type"] == "select"){
 						$multiple_attr = '';
@@ -136,10 +142,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						
 						$form['document'][$i]['select'] = array(			
 							'#type' => 'select',
-							'#title' => $field,
+							'#title' => $field_label,
 							'#multiple' =>	$multiple_attr,
+							'#required' =>	$required_attr,
 							'#options' => $webform_elements[$field]["#options"],
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
 						);
 					}else if($webform_elements[$field]["#type"] == "checkbox"){
 						$checkbox_val = 0;
@@ -149,14 +156,16 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						}
 						$form['document'][$i]['checkbox'] = array(			
 							'#type' => 'checkbox',
-							'#title' => $field,
+							'#title' => $field_label,
 							'#default_value' => $checkbox_val,
+							'#required' =>	$required_attr,
 						);
 					}else if($webform_elements[$field]["#type"] == "textarea"){
 						$form['document'][$i]['dvalue'] = array(			
 							'#type' => 'textarea',
-							'#title' => $field,
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+							'#title' => $field_label,
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+							'#required' =>	$required_attr,
 						);
 					}else if($webform_elements[$field]["#type"] == "webform_image_file"){
 						$multiple_attr = '';
@@ -200,10 +209,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						
 						$form['document'][$i]['image'] = array(			
 							'#type' => 'managed_file',				
-							'#title' => $field,
-								'#multiple' =>	$multiple_attr,
+							'#title' => $field_label,
+							'#multiple' =>	$multiple_attr,
+							'#required' =>	$required_attr,
 							'#upload_location' => 's3://'.date("Y-m"), /* s3://2018-04 */
-								'#default_value' => $fid,
+							'#default_value' => $fid,
 						);
 						
 						$form['document'][$i]['image_info'] = array(			
@@ -212,7 +222,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						);
 						
 					}else if($webform_elements[$field]["#type"] == "element"){
-						
 						$multiple_attr = '';
 						if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 							$multiple_attr = 1;
@@ -241,7 +250,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						}
 						$form['document'][$i]['relational'] = array(			
 							'#type' => 'select',
-							'#title' => $field,
+							'#title' => $field_label,
+							'#required' =>	$required_attr,
 							'#options' => $relative_options,
 							'#multiple' =>	$multiple_attr,
 							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
@@ -254,9 +264,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							}
 							$form['document'][$i]['relational'] = array(			
 								'#type' => 'radios',
-								'#title' => $field,
+								'#title' => $field_label,
 								'#options' => $relative_options,
-								'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+								'#required' =>	$required_attr,
+								'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
 							);
 						}
 					}else{
@@ -264,6 +275,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$multiple_attr = '';
 						if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 							$multiple_attr = 1;
+						
+						$text_field_type = $webform_elements[$field]["#text_field_type"] ? $webform_elements[$field]["#text_field_type"] : 'textfield';
 						
 						if($multiple_attr){
 							// Gather the number of names in the form already.
@@ -297,8 +310,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 									$text_value[$k] = '';
 								
 								$form['document'][$i]['names_fieldset']['dvalue'][$k] = array(
-									'#type' => 'textfield',
-									'#title' => $field,
+									'#type' => $text_field_type,
+									'#title' => $field_label,
+									'#required' =>	$required_attr,
 									'#default_value' => $text_value[$k],
 								);
 							}
@@ -332,9 +346,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							
 						}else{
 							$form['document'][$i]['dvalue'] = array(
-								'#type' => 'textfield',
-								'#title' => $field,
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+								'#type' => $text_field_type,
+								'#title' => $field_label,
+								'#required' =>	$required_attr,
+								'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
 							);
 						}
 					}
@@ -496,11 +511,6 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 			if (isset($document_value['dvalue'])) {
 				 if ($document_value['dvalue'] != "") {
 					$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['dvalue'] . '",';
-					if(!empty(\Drupal::config('hms_setting.settings')->get('hms_collection_name'))){
-						if ($document_value['dkey'] == "email" && $mongodb_collection == \Drupal::config('hms_setting.settings')->get('hms_collection_name') && $_SESSION["mongodb_nid"] == \Drupal::config('hms_setting.settings')->get('hms_connection_node')) {
-							$email_id = $document_value['dvalue'];
-						}
-					}
 				 }
 			}
 					 
@@ -837,10 +847,16 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 				'#default_value' => $field,						
 			);
 			
+			$required_attr = '';
+			if(isset($webform_elements[$field]["#required"]) && $webform_elements[$field]["#required"] == 1)
+				$required_attr = 1;
+			
+			$field_label = (isset($webform_elements[$field]["#title"]) && !empty($webform_elements[$field]["#title"])) ? $webform_elements[$field]["#title"] : ucfirst($field);
+			
 			if($webform_elements[$field]["#type"] == "details"){
 				$form[$j] = [
 					'#type' => 'details',
-					'#title' => $field ,
+					'#title' => $field,
 					'#prefix' => '<div class="clearboth">',
 					'#suffix' => '</div>',
 					'#open' => TRUE,
@@ -852,7 +868,7 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 					'#default_value' => $field,						
 				);
 				
-				$form[$j]['document'] = addsublevel($webform_elements[$field],(isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
+				$form[$j]['document'] = addsublevel($field, $webform_elements[$field],(isset($json_result[$field])) ? $json_result[$field] : array(), $form_state);
 				
 			}else if($webform_elements[$field]["#type"] == "select"){
 				$multiple_attr = '';
@@ -861,8 +877,9 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 				
 				$form[$j]['select'] = array(
 					'#type' => 'select',
-					'#title' => $field,
+					'#title' => $field_label,
 					'#multiple' =>	$multiple_attr,
+					'#required' =>	$required_attr,
 					'#options' => $webform_elements[$field]["#options"],
 					'#default_value' => (isset($json_result[$field])) ? $json_result[$field] : '',
 				);
@@ -874,14 +891,16 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 				}
 				$form[$j]['checkbox'] = array(			
 					'#type' => 'checkbox',
-					'#title' => $field,
+					'#title' => $field_label,
 					'#default_value' => $checkbox_val,
+					'#required' =>	$required_attr,
 				);
 			}else if($webform_elements[$field]["#type"] == "textarea"){
 				$form[$j]['dvalue'] = array(			
 					'#type' => 'textarea',				
-					'#title' => $field,
+					'#title' => $field_label,
 					'#default_value' => (isset($json_result[$field])) ? $json_result[$field] : '',
+					'#required' =>	$required_attr,
 				);
 			}else if($webform_elements[$field]["#type"] == "webform_image_file"){
 				$multiple_attr = '';
@@ -924,10 +943,11 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 				}
 				$form[$j]['image'] = array(		
 					'#type' => 'managed_file',				
-					'#title' => $field,
+					'#title' => $field_label,
 					'#multiple' =>	$multiple_attr,
 					'#upload_location' => 's3://'.date("Y-m"), /* s3://2018-04 */
 					'#default_value' => $fid,
+					'#required' =>	$required_attr,
 				);
 				
 				$form[$j]['image_info'] = array(			
@@ -963,10 +983,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				}
 				$form[$j]['relational'] = array(			
 					'#type' => 'select',
-					'#title' => $field,
+					'#title' => $field_label,
 					'#multiple' =>	$multiple_attr,
+					'#required' =>	$required_attr,
 					'#options' => $relative_options,
-					'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+					'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
 				);
 				}else{
 					$relative_options = array();
@@ -976,9 +997,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					}
 					$form[$j]['relational'] = array(			
 						'#type' => 'radios',
-						'#title' => $field,
+						'#title' => $field_label,
 						'#options' => $relative_options,
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+						'#required' =>	$required_attr,
+						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : ''
 					);
 				}
 			}else{
@@ -986,6 +1008,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$multiple_attr = '';
 				if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 					$multiple_attr = 1;
+				
+				$text_field_type = $webform_elements[$field]["#text_field_type"] ? $webform_elements[$field]["#text_field_type"] : 'textfield';
 				
 				if($multiple_attr){
 					// Gather the number of names in the form already.
@@ -1018,9 +1042,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							$text_value[$l] = '';
 						
 						$form[$j]['names_fieldset']['dvalue'][$l] = array(
-							'#type' => 'textfield',
-							'#title' => $field,
+							'#type' => $text_field_type,
+							'#title' => $field_label,
 							'#default_value' => $text_value[$l],
+							'#required' =>	$required_attr,
+							
 						);
 					}
 					
@@ -1053,9 +1079,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					
 				}else{
 					$form['document'][$j]['dvalue'] = array(
-					'#type' => 'textfield',
-					'#title' => $field,
+						'#type' => $text_field_type,
+						'#title' => $field_label,
+						'#required' =>	$required_attr,
 						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+						'#attributes' => array('class' => array($field_validation))
 				);
 				}
 			}

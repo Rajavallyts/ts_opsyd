@@ -66,19 +66,25 @@ Drupal.behaviors.mongodb_api = {
 				$(this).siblings(".multiple_check").css("display","block");
 			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
 				$(this).siblings(".multiple_check").css("display","block");
+				if($(this).val() == "textfield")
+					$(this).siblings(".formvalidation").css("display","block");
 			}else{
 				$(this).siblings(".dropdown_values").css("display","none");
 				$(this).siblings(".multiple_check").css("display","none");
+				$(this).siblings(".formvalidation").css("display","none");
 			}
 		});
 		$(".dropdown_values").css("display","none");
 		$(".multiple_check").css("display","none");
+		$(".formvalidation").css("display","none");
 		$(".formfieldformat").each( function() {			
 			if ($(this).val() == "select"){
 				$(this).siblings(".dropdown_values").css("display","block");
 				$(this).siblings(".multiple_check").css("display","block");
 			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
 				$(this).siblings(".multiple_check").css("display","block");
+				if($(this).val() == "textfield")
+					$(this).siblings(".formvalidation").css("display","block");
 			}
 		});
 	//}	  
