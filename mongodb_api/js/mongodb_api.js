@@ -6,7 +6,7 @@ Drupal.behaviors.mongodb_api = {
   $(document).ready(function () {	  
 	//alert (drupalSettings.geoField);
 	
-		if (menuadded == "no") {		
+		if (menuadded == "no" && drupalSettings.dataformlist !== undefined) {		
 			var newmenu = '<ul class="menu">' + drupalSettings.dataformlist + '</ul>'
 			//$("#block-mainnavigation ul > li.sf-depth-1:nth-child(3)").append(newmenu);
 			$("#block-mainnavigation ul > li.sf-depth-1:last-child").append(newmenu);
@@ -64,30 +64,58 @@ Drupal.behaviors.mongodb_api = {
 			if ($(this).val() == "select"){
 				$(this).siblings(".dropdown_values").css("display","block");
 				$(this).siblings(".multiple_check").css("display","block");
+				$(this).siblings(".unique_check").css("display","block");
+				$(this).siblings(".formvalidation").css("display","none");
 			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
 				$(this).siblings(".multiple_check").css("display","block");
-				if($(this).val() == "textfield")
+				if($(this).val() == "textfield"){
 					$(this).siblings(".formvalidation").css("display","block");
+					$(this).siblings(".unique_check").css("display","block");
+				}
 			}else{
 				$(this).siblings(".dropdown_values").css("display","none");
 				$(this).siblings(".multiple_check").css("display","none");
 				$(this).siblings(".formvalidation").css("display","none");
+				$(this).siblings(".unique_check").css("display","none");
 			}
 		});
 		$(".dropdown_values").css("display","none");
 		$(".multiple_check").css("display","none");
 		$(".formvalidation").css("display","none");
+		$(".unique_check").css("display","none");
 		$(".formfieldformat").each( function() {			
 			if ($(this).val() == "select"){
 				$(this).siblings(".dropdown_values").css("display","block");
 				$(this).siblings(".multiple_check").css("display","block");
+				$(this).siblings(".unique_check").css("display","block");
+				$(this).siblings(".formvalidation").css("display","none");
 			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
 				$(this).siblings(".multiple_check").css("display","block");
-				if($(this).val() == "textfield")
+				if($(this).val() == "textfield"){
 					$(this).siblings(".formvalidation").css("display","block");
+					$(this).siblings(".unique_check").css("display","block");
+				}
 			}
 		});
 	//}	  
+	
+	$(".multiple_attr_field").click(function(){
+		if($(this).is(":checked")){
+			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',true);
+			$(this).parents('.multiple_check').next(".unique_check").find("input").prop('checked',false);
+		}else{
+			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',false);
+		}
+	});
+	
+	$(".multiple_attr_field").each(function(){
+		if($(this).is(":checked")){
+			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',true);
+			$(this).parents('.multiple_check').next(".unique_check").find("input").prop('checked',false);
+		}else{
+			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',false);
+		}
+	});
 	
 	// disable/enable multiple checkbox for collection reation field
 	$(".relative_field_format").change(function() {
@@ -103,7 +131,6 @@ Drupal.behaviors.mongodb_api = {
 		if ($(this).val() == "radio"){
 			$(this).next(".multiple_check").find("input").attr('disabled',true);
 			$(this).next(".multiple_check").find("input").prop('checked',false);
-			//$(this).next(".multiple_check").find("input").removeAttr('checked');
 		}else{
 			$(this).next(".multiple_check").find("input").attr('disabled',false);
 		}
@@ -132,25 +159,6 @@ Drupal.behaviors.mongodb_api = {
 				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",true);
 			else
 				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",false);
-		});
-		
-		// handling the required checkbox in hms-settings page
-		$(".key_name").click(function(){
-			if($(this).is(":checked"))
-				$(this).parents('tr').find('.key_required').attr("disabled",false);
-			else{
-				$(this).parents('tr').find('.key_required').attr("disabled",true);
-				$(this).parents('tr').find('.key_required').attr("checked",false);
-			}
-		});
-		
-		$(".key_name").each(function(){
-			if($(this).is(":checked"))
-				$(this).parents('tr').find('.key_required').attr("disabled",false);
-			else{
-				$(this).parents('tr').find('.key_required').attr("disabled",true);
-				$(this).parents('tr').find('.key_required').attr("checked",false);
-			}
 		});
 	});
 })(jQuery, Drupal);

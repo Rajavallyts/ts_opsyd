@@ -171,7 +171,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						'#type' => 'textfield',      
 						'#required' => FALSE,
 						'#default_value' => $label_value,
-						'#attributes' => array('style' => 'float: left; max-width: 200px; margin: 10px;','placeholder' => 'Label name'),
+						'#attributes' => array('style' => 'float: left; max-width: 200px; margin: 10px;','placeholder' => 'Rename '.$resultkey),
 					);
 					
 					$query = \Drupal::entityQuery('collection_relations')
@@ -208,7 +208,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				);
 					
 				$options = array();					
-				$multiple_check = $required_check = false;
+				$multiple_check = $required_check = $unique_check = false;
 				if (isset($webform_elements[$resultkey])) {		
 					if ($webform_elements[$resultkey]['#type']	== 'select') {
 							$form['document'][$i]['field_format']['#default_value'] = 'select';
@@ -227,6 +227,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					}
 					if(isset($webform_elements[$resultkey]["#required"]) && $webform_elements[$resultkey]["#required"] == 1)
 						$required_check = true;
+					if(isset($webform_elements[$resultkey]["#unique"]) && $webform_elements[$resultkey]["#unique"] == 1)
+						$unique_check = true;
 				}
 				
 				if(!empty($coll_ids)){
@@ -255,8 +257,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#options' => [
 						'' => 'Select validation',
 						'textfield' => 'Text',
-						'number' => 'Number',
+						'number' => 'Number (Integer)',
+						'float' => 'Number (Float)',
 						'email' => 'Email',
+						'tel' => 'Telephone',
+						'date' => 'Date',
+						'datetime' => 'Date and Time'
 					],
 					'#class' => 'value-field',					
 					'#theme_wrappers' => array(),
@@ -277,15 +283,24 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#type' => 'checkbox',				
 					'#title' => 'Multiple',
 					'#default_value' => $multiple_check,
-					'#attributes' => array('style' => 'float:left;'),
+					'#attributes' => array('style' => 'float:left;', 'class' => array('multiple_attr_field')),
 					'#prefix' => '<div class="multiple_check">',
+					'#suffix' => '</div>'
+				);
+				
+				$form['document'][$i]['unique_attr'] = array(
+					'#type' => 'checkbox',				
+					'#title' => 'Unique',
+					'#default_value' => $unique_check,
+					'#attributes' => array('style' => 'float:left;'),
+					'#prefix' => '<div class="unique_check">',
 					'#suffix' => '</div>'
 				);
 				
 				$form['document'][$i]['dropdown_options'] = array(
 					'#type' => 'textfield',				
-					'#default_value' => implode(",", $options),
-					'#attributes' => array('style' => 'float:left; border: #c0c0c0 1px solid !important; max-width: 350px; margin-left: 7px;'),
+					'#default_value' => implode(",",$options),
+					'#attributes' => array('style' => 'float:left; border: #c0c0c0 1px solid !important; max-width: 300px; margin-left: 7px;'),
 					'#prefix' => '<div class="dropdown_values">',
 					'#suffix' => '</div>'							
 				);
@@ -305,7 +320,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							'#class' => 'value-field',
 							'#attributes' => array('style' => 'float: left; max-width: 250px; margin: 10px;','disabled' => TRUE),					   					
 							'#theme_wrappers' => array(),
-							'#size' => 2000,									
 						);
 					}
 				
@@ -392,17 +406,20 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 		if ($document_value['webform_select'] == 1 || isset($document_value['document'])):
 			if (isset($document_value['key'])) {			
 				
-				$multiple_attr = $required_attr = FALSE;
+				$multiple_attr = $required_attr = $unique_attr = FALSE;
 				if(isset($document_value['multiple_attr']) && $document_value['multiple_attr'] == 1)
 					$multiple_attr = TRUE;
 				if(isset($document_value['required_attr']) && $document_value['required_attr'] == 1)
 					$required_attr = TRUE;
+				if(isset($document_value['unique_attr']) && $document_value['unique_attr'] == 1)
+					$unique_attr = TRUE;
 				
 				if ($document_value['field_format'] == 'select') {
 					$options1 = explode(",",$document_value['dropdown_options']);
 					
 					$dropdown_options = array();
 					foreach($options1 as $option){
+						$option = trim($option);
 						$dropdown_options[$option] = $option;
 					}
 					
@@ -411,6 +428,7 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					'#type' => $document_value['field_format'],				
 						'#multiple' =>	$multiple_attr,					
 					'#options' => $dropdown_options,
+						'#unique' => $unique_attr,
 					];
 				}elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$document_value['key']] = [
@@ -436,6 +454,7 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 						'#title' => $document_value['key'],
 						'#type' => 'textfield',
 						'#multiple' =>	$multiple_attr,
+						'#unique' => $unique_attr,
 						'#text_field_type' => isset($document_value['text_field_type']) ? $document_value['text_field_type'] : '',
 					];
 				}else {
@@ -646,7 +665,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 				'#type' => 'textfield',      
 				'#required' => FALSE,
 				'#default_value' => $label_value,
-				'#attributes' => array('style' => 'float: left; max-width: 200px; margin: 10px;','placeholder' => 'Label name'),
+				'#attributes' => array('style' => 'float: left; max-width: 200px; margin: 10px;','placeholder' => 'Rename '.$key),
 			);
 			
 			$query = \Drupal::entityQuery('collection_relations')
@@ -683,7 +702,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 			);
 			
 			$options = array();					
-			$multiple_check = $required_check = false;
+			$multiple_check = $required_check = $unique_check = false;
 			if (isset($webform_elements[$key])) {		
 				if ($webform_elements[$key]['#type']	== 'select') {
 					$form[$j]['field_format']['#default_value'] = 'select';
@@ -702,6 +721,8 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 				}
 				if(isset($webform_elements[$key]["#required"]) && $webform_elements[$key]["#required"] == 1)
 					$required_check = true;
+				if(isset($webform_elements[$key]["#unique"]) && $webform_elements[$key]["#unique"] == 1)
+					$unique_check = true;
 			}
 			
 			if(!empty($coll_ids)){
@@ -729,8 +750,12 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 				'#options' => [
 					'' => 'Select validation',
 					'textfield' => 'Text',
-					'number' => 'Number',
+					'number' => 'Number (Integer)',
+					'float' => 'Number (Float)',
 					'email' => 'Email',
+					'tel' => 'Telephone',
+					'date' => 'Date',
+					'datetime' => 'Date and Time'
 				],
 				'#class' => 'value-field',					
 				'#theme_wrappers' => array(),
@@ -751,15 +776,24 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 				'#type' => 'checkbox',				
 				'#title' => 'Multiple',
 				'#default_value' => $multiple_check,
-				'#attributes' => array('style' => 'float:left;'),
+				'#attributes' => array('style' => 'float:left;','class' => array('multiple_attr_field')),
 				'#prefix' => '<div class="multiple_check">',
+				'#suffix' => '</div>'
+			);
+			
+			$form[$j]['unique_attr'] = array(
+				'#type' => 'checkbox',				
+				'#title' => 'Unique',
+				'#default_value' => $unique_check,
+				'#attributes' => array('style' => 'float:left;'),
+				'#prefix' => '<div class="unique_check">',
 				'#suffix' => '</div>'
 			);
 			
 			$form[$j]['dropdown_options'] = array(
 				'#type' => 'textfield',				
-				'#default_value' => implode(",", $options),				
-				'#attributes' => array('style' => 'float:left; border: #c0c0c0 1px solid !important; max-width: 350px; margin-left: 7px;'),
+				'#default_value' => implode(",",$options),				
+				'#attributes' => array('style' => 'float:left; border: #c0c0c0 1px solid !important; max-width: 300px; margin-left: 7px;'),
 				'#prefix' => '<div class="dropdown_values">',
 				'#suffix' => '</div>'					
 			);
@@ -805,17 +839,20 @@ function addsublevel_submit($doc_key, $document_values, &$webform_elements){
 		if ($document_value['webform_select'] == 1 || isset($document_value['document'])):
 		if (strcmp($document_key,'key') != 0):		
 			if (!isset($document_value['document'])) {			
-				$multiple_attr = $required_attr = FALSE;
+				$multiple_attr = $required_attr = $unique_attr =FALSE;
 				if(isset($document_value['multiple_attr']) && $document_value['multiple_attr'] == 1)
 					$multiple_attr = TRUE;
 				if(isset($document_value['required_attr']) && $document_value['required_attr'] == 1)
 					$required_attr = TRUE;
+				if(isset($document_value['unique_attr']) && $document_value['unique_attr'] == 1)
+					$unique_attr = TRUE;
 			
 				if ($document_value['field_format'] == 'select') {
 					
 					$options = explode(",",$document_value['dropdown_options']);
 					$dropdown_options = array();
 					foreach($options as $option){
+						$option = trim($option);
 						$dropdown_options[$option] = $option;
 					}
 					
@@ -824,6 +861,7 @@ function addsublevel_submit($doc_key, $document_values, &$webform_elements){
 					'#type' => $document_value['field_format'],				
 						'#multiple' =>	$multiple_attr,					
 					'#options' => $dropdown_options,
+						'#unique' => $unique_attr,
 					];
 				} elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$doc_key][$document_value['key']] = [
@@ -849,6 +887,7 @@ function addsublevel_submit($doc_key, $document_values, &$webform_elements){
 						'#title' => $document_value['key'],
 						'#type' => 'textfield',
 						'#multiple' =>	$multiple_attr,
+						'#unique' => $unique_attr,
 						'#text_field_type' => isset($document_value['text_field_type']) ? $document_value['text_field_type'] : '',
 					];
 				}else {

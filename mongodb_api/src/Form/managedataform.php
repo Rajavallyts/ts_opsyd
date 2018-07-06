@@ -7,6 +7,8 @@ use \Drupal\node\Entity\Node;
 use \Drupal\file\Entity\File;
 use Drupal\collection_relations\Entity\CollectionRelations;
 use Drupal\Core\Database\Database;
+use Drupal\Core\Datetime\DrupalDateTime;
+
 
 class managedataform extends FormBase {
   /**
@@ -44,10 +46,6 @@ class managedataform extends FormBase {
 			$webform_id = $_SESSION["data_webform_id"];
 			$document_id = $_SESSION["data_document_id"];
 		}
-	}
-	
-	if($mongodb_collection != \Drupal::config('hms_setting.settings')->get('hms_collection_name') && $_SESSION["mongodb_nid"] != \Drupal::config('hms_setting.settings')->get('hms_connection_node')){
-		drupal_set_message("Your connection id and collection name is mismatching from hms settings configuration. Please check with your site administrator.","warning");
 	}
 		
 	if ($_SESSION['mongodb_token'] != ""){
@@ -121,7 +119,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					if($webform_elements[$field]["#type"] == "details"){
 						$form['document'][$i] = [
 							'#type' => 'details',
-							'#title' => $field,
+							'#title' => $field ,
 							'#prefix' => '<div class="clearboth">',
 							'#suffix' => '</div>',
 							'#open' => TRUE,
@@ -148,6 +146,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							'#options' => $webform_elements[$field]["#options"],
 							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
 						);
+						if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
+							$form['document'][$i]['dunique'] = array(
+								'#type' => 'hidden',
+								'#default_value' => 1,
+							);
+						}
 					}else if($webform_elements[$field]["#type"] == "checkbox"){
 						$checkbox_val = 0;
 					if(isset($json_result) && isset($json_result[$field])){
@@ -276,7 +280,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 							$multiple_attr = 1;
 						
-						$text_field_type = $webform_elements[$field]["#text_field_type"] ? $webform_elements[$field]["#text_field_type"] : 'textfield';
+						$text_field_type = 'textfield';
+						$attributes_array = [];
+						if(!empty($webform_elements[$field]["#text_field_type"])){
+							$text_field_type =  $webform_elements[$field]["#text_field_type"];
+						}
 						
 						if($multiple_attr){
 							// Gather the number of names in the form already.
@@ -294,27 +302,53 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							
 							$form['document'][$i]['names_fieldset'] = [
 							  '#type' => 'fieldset',
-							  //'#title' => $this->t('People coming to picnic'),
 							  '#prefix' => '<div id="names-fieldset-wrapper-'.$i.'">',
 							  '#suffix' => '</div>',
 							];
 							
 							for ($k = 0; $k < $num_names; $k++) {
 								if(isset($json_result[$field]) && !empty($json_result[$field])){
-									if(is_array($json_result[$field]))
-										$text_value[$k] = $json_result[$field][$k];
-									else
-										$text_value[0] = $json_result[$field];
+									if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+										if(is_array($json_result[$field])){
+											$text_field_value[$k] = '';
+											$timestamp = strtotime($json_result[$field][$k]);
+											if(!empty($timestamp))
+												$text_field_value[$k] = DrupalDateTime::createFromTimestamp($timestamp);
+										}else{
+											$text_field_value[0] = '';
+											$timestamp = strtotime($json_result[$field]);
+											if(!empty($timestamp))
+												$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
+										}
+									}else{
+										if(is_array($json_result[$field])){
+											$text_field_value[$k] = $json_result[$field][$k];
+										}else{
+											$text_field_value[0] = $json_result[$field];
+										}
+									}
 								}
 								else
-									$text_value[$k] = '';
+									$text_field_value[$k] = '';
 								
 								$form['document'][$i]['names_fieldset']['dvalue'][$k] = array(
 									'#type' => $text_field_type,
 									'#title' => $field_label,
 									'#required' =>	$required_attr,
-									'#default_value' => $text_value[$k],
+									'#default_value' => $text_field_value[$k],
+									'#attributes' => $attributes_array
 								);
+								
+								if(!empty($webform_elements[$field]["#text_field_type"])){
+									if($text_field_type == "number" || $text_field_type == "float"){
+										if($text_field_type == "number")
+											$form['document'][$i]['names_fieldset']['dvalue'][$k]["#step"] = 1;
+										else
+											$form['document'][$i]['names_fieldset']['dvalue'][$k]["#step"] = "any";
+										$form['document'][$i]['names_fieldset']['dvalue'][$k]["#type"] = "number";
+									}
+								}
+								
 							}
 							
 							$form['document'][$i]['names_fieldset']['actions'] = [
@@ -345,12 +379,40 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							}
 							
 						}else{
+							$text_field_value = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+							if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+								if(isset($json_result) && isset($json_result[$field])){
+									$text_field_value = '';
+									$timestamp = strtotime($json_result[$field]);
+									if(!empty($timestamp))
+										$text_field_value = DrupalDateTime::createFromTimestamp($timestamp);
+								}
+							}
+							
+							if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
+								$form['document'][$i]['dunique'] = array(
+									'#type' => 'hidden',
+									'#default_value' => 1,
+								);
+							}
+							
 							$form['document'][$i]['dvalue'] = array(
 								'#type' => $text_field_type,
 								'#title' => $field_label,
 								'#required' =>	$required_attr,
-								'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+								'#default_value' => $text_field_value,
+								'#attributes' => $attributes_array
 							);
+							
+							if(!empty($webform_elements[$field]["#text_field_type"])){
+								if($text_field_type == "number" || $text_field_type == "float"){
+									if($text_field_type == "number")
+										$form['document'][$i]['dvalue']["#step"] = 1;
+									else
+										$form['document'][$i]['dvalue']["#step"] = "any";
+									$form['document'][$i]['dvalue']["#type"] = "number";
+								}
+							}
 						}
 					}
 				$i++;
@@ -478,6 +540,64 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
     $form_state->setRebuild();
   }
   
+public function validateForm(array &$form, FormStateInterface $form_state) {
+	$mongodb_collection = $_SESSION["data_mongodb_collection"];
+	$document_id = $_SESSION["data_document_id"];
+	
+	$i=0;
+	$document_values = $form_state->getValue("document");
+
+	foreach($document_values as $document_value){
+		if(isset($document_value['document']) && count($document_value['document']) > 0){
+			$error_element = "document][$i]";
+			sublevel_validation($document_value['document'], $document_value['dkey'], $error_element, $form_state);
+		}else{
+			if (isset($document_value['dunique'])) {
+				if ((isset($document_value['dvalue'])&& $document_value['dvalue'] != "") || (isset($document_value['select'])&& $document_value['select'] != "")) {
+					
+					if(isset($document_value['dvalue'])&& $document_value['dvalue'] != ""){
+						$search_string = strtolower($document_value['dvalue']);
+						$error_field_type = "dvalue";
+					}
+					if(isset($document_value['select'])&& $document_value['select'] != ""){
+						$search_string = strtolower($document_value['select']);
+						$error_field_type = "select";
+					}
+					
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/find";
+					$api_param = array ( "token" => $_SESSION['mongodb_token']);
+					$ch = curl_init();
+					curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+					curl_setopt($ch, CURLOPT_POST, 1);
+					curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+					$server_output = curl_exec ($ch);		
+					curl_close ($ch);
+
+					$documents = json_decode($server_output, true);
+					$exist = 0;
+					foreach($documents as $document){
+						if(!empty($document_id) && $document_id == $document["_id"]){
+							if (isset($document[$document_value['dkey']]) && strpos(strtolower($document[$document_value['dkey']]),$search_string) !== false ) {
+								$exist++;
+							}
+							if($exist == 2){
+								$form_state->setErrorByName("document][$i][".$error_field_type, $this->t("'$search_string' value is already exist in a document."));
+								break;
+							}
+						}else{
+							if (isset($document[$document_value['dkey']]) && strpos(strtolower($document[$document_value['dkey']]),$search_string) !== false ) {
+								$form_state->setErrorByName("document][$i][".$error_field_type, $this->t("'$search_string' value is already exist in a document."));
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		$i++;
+	}
+}
 
 /*
 * {@inheritdoc}
@@ -492,14 +612,6 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 	$updateWith = "{";
 	$document_values = $form_state->getValue("document");
 
-	//$new_file = file_save_upload('image',array(),'s3://'.date("Y-m"));
-	
-	/* $all_files = \Drupal::request()->files->get('files', []);
-	if (empty($all_files["image"])) {
-		return FALSE;
-	}
-	$file_upload = $all_files["image"];
-	$uri = file_unmanaged_move($file_upload->getRealPath(), 's3://'.date("Y-m")); */
 	$email_id = "";
 	 foreach($document_values as $document_value)
 	 {
@@ -514,7 +626,7 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 				 }
 			}
 					 
-			 if (isset($document_value['names_fieldset'])) {
+			if (isset($document_value['names_fieldset'])) {
 				 if ($document_value['names_fieldset'] != "") {
 					$dval_txt = '';
 					foreach($document_value['names_fieldset']['dvalue'] as $dvalue){
@@ -644,6 +756,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		);
 	}
 									 
+	
 	 $ch = curl_init();
 	 curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
 	 curl_setopt($ch, CURLOPT_POST, 1);
@@ -655,50 +768,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	drupal_set_message($server_output);
 	if(!empty($document_id))
 		 drupal_set_message("Changes updated successfully");
-	else{
+	else
 		drupal_set_message("New data added successfully");
-		$json_result = json_decode($server_output, true);
-		
-		if ($email_id != "") {
-
-			// generating tokens
-			$api_endpointurl = "https://app.hms.movmobile.com/api/v1/sessions/email/registration-confirmation";
-			$api_param = array ( "email" => $email_id);
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			$server_output = curl_exec ($ch);		
-			curl_close ($ch);
-			$token_result = json_decode($server_output, true);
-			if(isset($token_result["success"])){
-			
-				$mailManager = \Drupal::service('plugin.manager.mail');
-				$module = "hms_userimport";
-				$key = 'newuser_otp';
-				$to = $email_id;
-				$params['email_subject'] = "HMS OPSYD - New user account";
-				$token = sha1(uniqid($email_id, true));
-				//$token = $token_result["data"]["token"];
-				
-				$params['message'] = $token;	
-				$langcode = \Drupal::currentUser()->getPreferredLangcode();
-				$send = true;
-				
-				$result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
-				$connection = Database::getConnection();
-				//$connection->query("INSERT INTO opsyd_hms_users (token, email, tstamp, objectid) VALUES ('$token', '" . $email_id . "', ".$_SERVER["REQUEST_TIME"].", '".$json_result['objectID']."')");
-				$connection->query("INSERT INTO opsyd_hms_users (token, email, tstamp) VALUES ('$token', '" . $email_id . "', ".$_SERVER["REQUEST_TIME"].")");
-			}else{
-				drupal_set_message(t("Unable to send email from drupal interface."),"error");
-				drupal_set_message($token_result["message"],"error");
-				foreach($token_result["errors"] as $error_msg){
-					drupal_set_message($error_msg["message"],"error");
-				}
-			}
-		}
-	}
 		
 	$current_user = \Drupal::currentUser();
 	$roles = $current_user->getRoles();	
@@ -713,6 +784,86 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
   }  
   
   
+}
+
+function sublevel_validation($document_values, $parent_key, $error_element, FormStateInterface $form_state){
+	$mongodb_collection = $_SESSION["data_mongodb_collection"];
+	$document_id = $_SESSION["data_document_id"];
+	$j=0;
+	
+	foreach($document_values as $document_value){
+		if(isset($document_value['document']) && count($document_value['document']) > 0){
+			$sub_error_element = $error_element."[document][$j]";
+			sublevel_validation($document_value['document'], $parent_key."##".$document_value['dkey'], $sub_error_element, $form_state);
+			
+		}else{
+			if (isset($document_value['dunique'])) {
+				if ((isset($document_value['dvalue'])&& $document_value['dvalue'] != "") || (isset($document_value['select'])&& $document_value['select'] != "")) {
+					
+					if(isset($document_value['dvalue'])&& $document_value['dvalue'] != ""){
+						$search_string = strtolower($document_value['dvalue']);
+						$error_field_type = "dvalue";
+					}
+					if(isset($document_value['select'])&& $document_value['select'] != ""){
+						$search_string = strtolower($document_value['select']);
+						$error_field_type = "select";
+					}
+					
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/find";
+					$api_param = array ( "token" => $_SESSION['mongodb_token']);
+					$ch = curl_init();
+					curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+					curl_setopt($ch, CURLOPT_POST, 1);
+					curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+					curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+					$server_output = curl_exec ($ch);		
+					curl_close ($ch);
+
+					$documents = json_decode($server_output, true);
+					$exist = 0;
+					$mongo_value = '';
+					foreach($documents as $document){
+						
+						// begin - walk to child element
+						$parent_array = $document;
+						if(strpos($parent_key,'##') !== false){
+							$keys = explode("##",$parent_key);
+							foreach($keys as $key){
+								if(isset($parent_array[$key]))
+									$parent_array = $parent_array[$key];
+								else
+									break;
+							}
+							if(isset($parent_array[$document_value['dkey']]))
+								$mongo_value = strtolower($parent_array[$document_value['dkey']]);
+						}else{
+							if(isset($document[$parent_key][$document_value['dkey']]))
+								$mongo_value = strtolower($document[$parent_key][$document_value['dkey']]);
+						}
+						// end
+						
+						if(!empty($document_id) && $document_id == $document["_id"]){
+							if (!empty($mongo_value) && strpos($mongo_value,$search_string) !== false ) {
+								$exist++;
+							}
+							if($exist == 2){
+								$form_state->setErrorByName($error_element."[document][$j][".$error_field_type, "'$search_string' value is already exist in a document.");
+								break;
+							}
+						}else{
+							if (!empty($mongo_value) && strpos($mongo_value,$search_string) !== false ) {
+								$form_state->setErrorByName($error_element."[document][$j][".$error_field_type, "'$search_string' value is already exist in a document.");
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		$j++;
+	}
+	
+	return $error_msg;
 }
 
 function addsublevel_submit($document_values){
@@ -883,6 +1034,13 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 					'#options' => $webform_elements[$field]["#options"],
 					'#default_value' => (isset($json_result[$field])) ? $json_result[$field] : '',
 				);
+				if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
+					$form[$j]['dunique'] = array(
+						'#type' => 'hidden',
+						'#default_value' => 1,
+					);
+				}
+				
 			}else if($webform_elements[$field]["#type"] == "checkbox"){
 				$checkbox_val = 0;
 				if(isset($json_result[$field])){
@@ -1009,7 +1167,14 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 					$multiple_attr = 1;
 				
-				$text_field_type = $webform_elements[$field]["#text_field_type"] ? $webform_elements[$field]["#text_field_type"] : 'textfield';
+				$text_field_type = 'textfield';
+				$attributes_array = [];
+				if(!empty($webform_elements[$field]["#text_field_type"])){
+					$text_field_type =  $webform_elements[$field]["#text_field_type"];
+					if($text_field_type == "number" || $text_field_type == "float"){
+						$text_field_type = "number";
+					}
+				}
 				
 				if($multiple_attr){
 					// Gather the number of names in the form already.
@@ -1033,21 +1198,46 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					
 					for ($l = 0; $l < $sub_num_names; $l++) {
 						if(isset($json_result[$field]) && !empty($json_result[$field])){
-							if(is_array($json_result[$field]))
-								$text_value[$l] = $json_result[$field][$l];
-							else
-								$text_value[0] = $json_result[$field];
+							if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+								if(is_array($json_result[$field])){
+									$text_field_value[$l] = '';
+									$timestamp = strtotime($json_result[$field][$l]);
+									if(!empty($timestamp))
+										$text_field_value[$l] = DrupalDateTime::createFromTimestamp($timestamp);
+								}else{
+									$text_field_value[0] = '';
+									$timestamp = strtotime($json_result[$field]);
+									if(!empty($timestamp))
+										$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
+								}
+							}else{
+								if(is_array($json_result[$field])){
+									$text_field_value[$l] = $json_result[$field][$l];
+								}else{
+									$text_field_value[0] = $json_result[$field];
+								}
+							}
 						}
 						else
-							$text_value[$l] = '';
+							$text_field_value[$l] = '';
 						
 						$form[$j]['names_fieldset']['dvalue'][$l] = array(
 							'#type' => $text_field_type,
 							'#title' => $field_label,
-							'#default_value' => $text_value[$l],
 							'#required' =>	$required_attr,
-							
+							'#default_value' => $text_field_value[$l],
+							'#attributes' => $attributes_array
 						);
+							
+						if(!empty($webform_elements[$field]["#text_field_type"])){
+							if($text_field_type == "number" || $text_field_type == "float"){
+								if($text_field_type == "number")
+									$form[$j]['names_fieldset']['dvalue'][$l]["#step"] = 1;
+								else
+									$form[$j]['names_fieldset']['dvalue'][$l]["#step"] = "any";
+								$form[$j]['names_fieldset']['dvalue'][$l]["#type"] = "number";
+							}
+						}
 					}
 					
 					$form[$j]['names_fieldset']['actions'] = [
@@ -1078,13 +1268,40 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					}
 					
 				}else{
-					$form['document'][$j]['dvalue'] = array(
+					$text_field_value = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
+					if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+						if(isset($json_result) && isset($json_result[$field])){
+							$text_field_value = '';
+							$timestamp = strtotime($json_result[$field]);
+							if(!empty($timestamp))
+								$text_field_value = DrupalDateTime::createFromTimestamp($timestamp);
+						}
+					}
+					
+					if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
+						$form[$j]['dunique'] = array(
+							'#type' => 'hidden',
+							'#default_value' => 1,
+						);
+					}
+				
+					$form[$j]['dvalue'] = array(
 						'#type' => $text_field_type,
 						'#title' => $field_label,
 						'#required' =>	$required_attr,
-						'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
-						'#attributes' => array('class' => array($field_validation))
-				);
+						'#default_value' => $text_field_value,
+						'#attributes' => $attributes_array
+					);
+					
+					if(!empty($webform_elements[$field]["#text_field_type"])){
+						if($text_field_type == "number" || $text_field_type == "float"){
+							if($text_field_type == "number")
+								$form[$j]['dvalue']["#step"] = 1;
+							else
+								$form[$j]['dvalue']["#step"] = "any";
+							$form[$j]['dvalue']["#type"] = "number";
+						}
+					}
 				}
 			}
 			$j++;
