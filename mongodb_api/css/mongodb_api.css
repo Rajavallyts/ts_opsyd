@@ -153,10 +153,16 @@ margin-top: 10px;
 .ajax-progress .message{
 	display:none !important;
 }
+.collections-field-set select#edit-source-collection {
+    width: 80%;
+}
+.collections-field-set .form-item {
+    margin-bottom: 0px;
+}
 
 .collectionsetting .details-wrapper, .key-update .details-wrapper{
     display: inline-block;
-    width: 95%;
+    width: 96%;
 }
 
 .collectionsetting #edit-document{
@@ -177,10 +183,11 @@ div.dataTables_wrapper {
 	overflow: auto;
 }
 
-.multiple_check{
+.required_check, .multiple_check, .unique_check{
 	float:left;
+	margin: 0px 5px;
 }
-.multiple_check .form-checkbox, input[id$="document-select-all"]{
+.required_check .form-checkbox, .multiple_check .form-checkbox, .unique_check .form-checkbox, input[id$="document-select-all"]{
 	margin-top:4px !important;
 }
 
