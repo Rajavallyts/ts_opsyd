@@ -146,12 +146,16 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							'#options' => $webform_elements[$field]["#options"],
 							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
 						);
-						if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
-							$form['document'][$i]['dunique'] = array(
-								'#type' => 'hidden',
-								'#default_value' => 1,
-							);
-						}
+
+					}else if($webform_elements[$field]["#type"] == "radios"){
+						
+						$form['document'][$i]['radios'] = array(			
+							'#type' => 'radios',
+							'#title' => $field_label,
+							'#required' =>	$required_attr,
+							'#options' => $webform_elements[$field]["#options"],
+							'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+						);
 					}else if($webform_elements[$field]["#type"] == "checkbox"){
 						$checkbox_val = 0;
 					if(isset($json_result) && isset($json_result[$field])){
@@ -553,15 +557,11 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 			sublevel_validation($document_value['document'], $document_value['dkey'], $error_element, $form_state);
 		}else{
 			if (isset($document_value['dunique'])) {
-				if ((isset($document_value['dvalue'])&& $document_value['dvalue'] != "") || (isset($document_value['select'])&& $document_value['select'] != "")) {
+				if (isset($document_value['dvalue'])&& $document_value['dvalue'] != "") {
 					
 					if(isset($document_value['dvalue'])&& $document_value['dvalue'] != ""){
 						$search_string = strtolower($document_value['dvalue']);
 						$error_field_type = "dvalue";
-					}
-					if(isset($document_value['select'])&& $document_value['select'] != ""){
-						$search_string = strtolower($document_value['select']);
-						$error_field_type = "select";
 					}
 					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/find";
@@ -662,6 +662,12 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 				 }
 			 }
 				 
+			 if (isset($document_value['radios'])) {
+				 if ($document_value['radios'] != "") {
+					$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['radios'] . '",';
+				 }
+			 }
+			 
 			 if (isset($document_value['relational'])) {
 				 if(!empty($document_value['relational'])){
 					 if(is_array($document_value['relational'])){
@@ -798,15 +804,11 @@ function sublevel_validation($document_values, $parent_key, $error_element, Form
 			
 		}else{
 			if (isset($document_value['dunique'])) {
-				if ((isset($document_value['dvalue'])&& $document_value['dvalue'] != "") || (isset($document_value['select'])&& $document_value['select'] != "")) {
+				if (isset($document_value['dvalue'])&& $document_value['dvalue'] != "") {
 					
 					if(isset($document_value['dvalue'])&& $document_value['dvalue'] != ""){
 						$search_string = strtolower($document_value['dvalue']);
 						$error_field_type = "dvalue";
-					}
-					if(isset($document_value['select'])&& $document_value['select'] != ""){
-						$search_string = strtolower($document_value['select']);
-						$error_field_type = "select";
 					}
 					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/find";
@@ -915,6 +917,12 @@ function addsublevel_submit($document_values){
 					 }
 				 }else{
 					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				 }
+			 }
+			 
+			 if (isset($document_value['radios'])) {
+				 if ($document_value['radios'] != "") {
+					$updateWith .= '"' . $document_value['dkey'] . '":"' . $document_value['radios'] . '",';
 				 }
 			 }
 			 
@@ -1034,13 +1042,15 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 					'#options' => $webform_elements[$field]["#options"],
 					'#default_value' => (isset($json_result[$field])) ? $json_result[$field] : '',
 				);
-				if(isset($webform_elements[$field]["#unique"]) && $webform_elements[$field]["#unique"] == 1){
-					$form[$j]['dunique'] = array(
-						'#type' => 'hidden',
-						'#default_value' => 1,
-					);
-				}
 				
+			}else if($webform_elements[$field]["#type"] == "radios"){
+				$form[$j]['radios'] = array(			
+					'#type' => 'radios',
+					'#title' => $field_label,
+					'#required' =>	$required_attr,
+					'#options' => $webform_elements[$field]["#options"],
+					'#default_value' => (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '',
+				);
 			}else if($webform_elements[$field]["#type"] == "checkbox"){
 				$checkbox_val = 0;
 				if(isset($json_result[$field])){

@@ -59,24 +59,25 @@ Drupal.behaviors.mongodb_api = {
 		});
 	}
 	
-	//if ($("#collectionsetting").length > 0) {
 		$(".formfieldformat").change(function() {
-			if ($(this).val() == "select"){
-				$(this).siblings(".dropdown_values").css("display","block");
-				$(this).siblings(".multiple_check").css("display","block");
-				$(this).siblings(".unique_check").css("display","block");
+		$(this).siblings('.unique_check').find("input").prop('checked',false);
+		$(this).siblings('.multiple_check').find("input").prop('checked',false);
+		
+		$(this).siblings(".multiple_check").css("display","none");
+		$(this).siblings(".unique_check").css("display","none");
+		$(this).siblings(".dropdown_values").css("display","none");
 				$(this).siblings(".formvalidation").css("display","none");
-			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
-				$(this).siblings(".multiple_check").css("display","block");
 				if($(this).val() == "textfield"){
 					$(this).siblings(".formvalidation").css("display","block");
+			$(this).siblings(".multiple_check").css("display","block");
 					$(this).siblings(".unique_check").css("display","block");
-				}
-			}else{
-				$(this).siblings(".dropdown_values").css("display","none");
-				$(this).siblings(".multiple_check").css("display","none");
-				$(this).siblings(".formvalidation").css("display","none");
-				$(this).siblings(".unique_check").css("display","none");
+		}else if($(this).val() == "select"){
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "radios"){
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+			$(this).siblings(".multiple_check").css("display","block");
 			}
 		});
 		$(".dropdown_values").css("display","none");
@@ -84,20 +85,19 @@ Drupal.behaviors.mongodb_api = {
 		$(".formvalidation").css("display","none");
 		$(".unique_check").css("display","none");
 		$(".formfieldformat").each( function() {			
-			if ($(this).val() == "select"){
-				$(this).siblings(".dropdown_values").css("display","block");
+		if($(this).val() == "textfield"){
+			$(this).siblings(".formvalidation").css("display","block");
 				$(this).siblings(".multiple_check").css("display","block");
 				$(this).siblings(".unique_check").css("display","block");
-				$(this).siblings(".formvalidation").css("display","none");
-			}else if($(this).val() == "textfield" || $(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+		}else if($(this).val() == "select"){
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "radios"){
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
 				$(this).siblings(".multiple_check").css("display","block");
-				if($(this).val() == "textfield"){
-					$(this).siblings(".formvalidation").css("display","block");
-					$(this).siblings(".unique_check").css("display","block");
-				}
 			}
 		});
-	//}	  
 	
 	$(".multiple_attr_field").click(function(){
 		if($(this).is(":checked")){

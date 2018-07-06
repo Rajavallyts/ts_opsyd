@@ -198,6 +198,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						'textfield' => 'Textfield',
 						'textarea' => 'Textarea',
 						'select' => 'Dropdown',
+							'radios' => 'Radio',
 						'boolean' => 'Boolean',
 							'webform_image_file' => 'File',
 							//'generic_element' => t('Collection Relation'),
@@ -218,6 +219,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							
 							if(isset($webform_elements[$resultkey]["#multiple"]) && $webform_elements[$resultkey]["#multiple"] == 1)
 								$multiple_check = true;
+					}else if ($webform_elements[$resultkey]['#type'] == 'radios') {
+						$form['document'][$i]['field_format']['#default_value'] = 'radios';
+						foreach ($webform_elements[$resultkey]['#options'] as $okey => $ovalue):
+							$options[] = $ovalue;
+						endforeach;
 						}else if ($webform_elements[$resultkey]['#type']	== 'checkbox') {
 							$form['document'][$i]['field_format']['#default_value'] = 'boolean';
 						}else {					
@@ -415,20 +421,33 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					$unique_attr = TRUE;
 				
 				if ($document_value['field_format'] == 'select') {
-					$options1 = explode(",",$document_value['dropdown_options']);
+					$options = explode(",",$document_value['dropdown_options']);
 					
 					$dropdown_options = array();
-					foreach($options1 as $option){
+					foreach($options as $option){
 						$option = trim($option);
 						$dropdown_options[$option] = $option;
 					}
 					
 					$webform_elements[$document_value['key']] = [
 					'#title' => $document_value['key'],
-					'#type' => $document_value['field_format'],				
+						'#type' => 'select',				
 						'#multiple' =>	$multiple_attr,					
-					'#options' => $dropdown_options,
-						'#unique' => $unique_attr,
+						'#options' => $dropdown_options
+					];
+				}elseif ($document_value['field_format'] == 'radios') {
+					
+					$options = explode(",",$document_value['dropdown_options']);
+					$dropdown_options = array();
+					foreach($options as $option){
+						$option = trim($option);
+						$dropdown_options[$option] = $option;
+					}
+					
+					$webform_elements[$document_value['key']] = [
+						'#title' => $document_value['key'],
+						'#type' => 'radios',				
+						'#options' => $dropdown_options,
 					];
 				}elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$document_value['key']] = [
@@ -464,7 +483,7 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					];				
 				}
 				$webform_elements[$document_value['key']]['#required'] = $required_attr;
-				if(isset($document_value['label_name']))
+				if(isset($document_value['label_name']) && !empty($document_value['label_name']))
 					$webform_elements[$document_value['key']]['#title'] = $document_value['label_name'];
 			} else {
 				
@@ -692,6 +711,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 					'textfield' => t('Textfield'),
 					'textarea' => t('Textarea'),
 					'select' => t('Dropdown'),
+					'radios' => 'Radio',
 					'boolean' => t('Boolean'),
 					'webform_image_file' => t('File'),
 					//'generic_element' => t('Collection Relation'),
@@ -712,6 +732,11 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 					
 					if(isset($webform_elements[$key]["#multiple"]) && $webform_elements[$key]["#multiple"] == 1)
 						$multiple_check = true;
+				}else if ($webform_elements[$key]['#type'] == 'radios') {
+					$form['document'][$i]['field_format']['#default_value'] = 'radios';
+					foreach ($webform_elements[$key]['#options'] as $okey => $ovalue):
+						$options[] = $ovalue;
+					endforeach;
 				}else if ($webform_elements[$key]['#type']	== 'checkbox') {
 					$form[$j]['field_format']['#default_value'] = 'boolean';
 				}else {					
@@ -858,12 +883,25 @@ function addsublevel_submit($doc_key, $document_values, &$webform_elements){
 					
 					$webform_elements[$doc_key][$document_value['key']] = [
 					'#title' => $document_value['key'],
-					'#type' => $document_value['field_format'],				
+						'#type' => 'select',				
 						'#multiple' =>	$multiple_attr,					
-					'#options' => $dropdown_options,
-						'#unique' => $unique_attr,
+						'#options' => $dropdown_options
 					];
-				} elseif ($document_value['field_format'] == 'boolean') {
+				}elseif ($document_value['field_format'] == 'radios') {
+					
+					$options = explode(",",$document_value['dropdown_options']);
+					$dropdown_options = array();
+					foreach($options as $option){
+						$option = trim($option);
+						$dropdown_options[$option] = $option;
+					}
+					
+					$webform_elements[$doc_key][$document_value['key']] = [
+						'#title' => $document_value['key'],
+						'#type' => 'radios',				
+						'#options' => $dropdown_options,
+					];
+				}elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$doc_key][$document_value['key']] = [
 					'#title' => $document_value['key'],
 					'#type' => 'checkbox',				
@@ -897,7 +935,7 @@ function addsublevel_submit($doc_key, $document_values, &$webform_elements){
 					];				
 				}
 				$webform_elements[$doc_key][$document_value['key']]['#required'] = $required_attr;
-				if(isset($document_value['label_name']))
+				if(isset($document_value['label_name']) && !empty($document_value['label_name']))
 					$webform_elements[$doc_key][$document_value['key']]['#title'] = $document_value['label_name'];
 			} else {
 				/*$webform_elements[$doc_key][$document_value['document']['key']] = [
