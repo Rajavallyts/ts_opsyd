@@ -121,7 +121,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	$form['document']['select_all'] = [
 		'#type' => 'checkbox',
 		'#title' => 'Select All',
-		'#attributes' => array('data-attr' => 'check-firstlevel'),
+		'#attributes' => array('data-attr' => 'check###firstlevel'),
 	];
 		
 		$json_result = $new_json;
@@ -185,8 +185,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					if(!empty($coll_ids)){
 						$coll_rel = CollectionRelations::load(array_keys($coll_ids)[0]);
 						$rel_collection = $coll_rel->field_relative_collection->value;
-						$rel_key 		= $coll_rel->field_relative_key->value;
-						$rel_value 		= $coll_rel->field_relative_value->value;
 						
 						$disabledAttr = TRUE;
 					}
@@ -638,7 +636,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 	$form['select_all'] = [
 		'#type' => 'checkbox',
 		'#title' => 'Select All',
-		'#attributes' => array('data-attr' => 'check-'.$resultKey),
+		'#attributes' => array('data-attr' => 'check###'.$resultKey),
 	];
 	
 	foreach($resultValue as $key => $value):		
@@ -659,7 +657,7 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 				$sub_webform_elements_key = $sub_webform_elements = array();
 			}
 			
-			$form[$j]['document'] = addsublevel($key, $value, $nlevelKey.'.'.$key, $sub_webform_elements, $sub_webform_elements_key);
+			$form[$j]['document'] = addsublevel($key, $value, $nlevelKey.'###'.$key, $sub_webform_elements, $sub_webform_elements_key);
 		} else {
 			
 			$form[$j]['webform_select'] = array(
@@ -691,15 +689,13 @@ function addsublevel($resultKey, $resultValue, $nlevelKey, $webform_elements, $w
 					->condition('status', 1)
 					->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=')
 					->condition('field_source_collection', trim($mongodb_collection), '=')
-					->condition('field_source_key', trim($nlevelKey.'.'.$key), '=');
+					->condition('field_source_key', trim($nlevelKey.'###'.$key), '=');
 			$coll_ids = $query->execute();
 			
 			$disabledAttr = FALSE;
 			if(!empty($coll_ids)){
 				$coll_rel = CollectionRelations::load(array_keys($coll_ids)[0]);
 				$rel_collection = $coll_rel->field_relative_collection->value;
-				$rel_key 		= $coll_rel->field_relative_key->value;
-				$rel_value 		= $coll_rel->field_relative_value->value;
 				
 				$disabledAttr = TRUE;
 			}

@@ -66,12 +66,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		if ($json_result['success'] == 1) {
 			$_SESSION['mongodb_token'] = "";
 			$_SESSION['mongodb_nid'] = "";
-			$_SESSION['group_id'] = "";
 			$_SESSION["data_mongodb_collection"] = "";
 			$_SESSION["data_webform_id"] = "";
 			$_SESSION["data_document_id"] = "";
 			$_SESSION["doc_mongodb_collection"] = "";
 			$_SESSION["doc_document_id"] = "";
+			if(isset($_SESSION['group_id']))
+				$_SESSION['group_id'] = "";
+			if(isset($_SESSION['schema_check']))
+				$_SESSION["schema_check"] = "";
 			drupal_set_message ('Connection closed');			
 		}
 		else

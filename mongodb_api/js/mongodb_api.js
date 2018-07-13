@@ -12,24 +12,6 @@ Drupal.behaviors.mongodb_api = {
 			$("#block-mainnavigation ul > li.sf-depth-1:last-child").append(newmenu);
 			menuadded = "yes";
 		}
-		$("#apiheader").click(function () {
-			$header = $(this);    
-			$content = $header.next();
-
-			$content.slideToggle(500, function () {
-				$header.text(function () {
-					return $content.is(":visible") ? "  Collapse JSON" : "  Expand JSON";
-				});
-			});
-
-			$("#copyToClipboard").click(function () { 
-				var $temp = $("<input>");
-				$("body").append($temp);  
-				$temp.val($('.testcontent .json_container').text()).select();
-				document.execCommand("copy");
-				$temp.remove();
-			});
-		});
 	});
 	
 	/* $(".node-mongodb-information-form input, .node-mongodb-information-form select,.node-mongodb-information-edit-form input, .node-mongodb-information-edit-form select").each(function(){
@@ -141,6 +123,28 @@ Drupal.behaviors.mongodb_api = {
 
 (function ($, Drupal) {
 	$(document).ready(function () {
+		$("#apiheader").click(function () {
+			$header = $(this);    
+			$content = $header.next();
+
+			$content.slideToggle('medium', function () {
+				$header.text(function () {
+					return $content.is(":visible") ? "  Collapse JSON" : "  Expand JSON";
+				});
+			});
+
+		});
+		$("#copyToClipboard").click(function () { 
+			var $temp = $("<input>");
+			$("body").append($temp);  
+			$temp.val($('.testcontent .json_container').text()).select();
+			document.execCommand("copy");
+			$temp.remove();
+			$(this).html("Copied");
+			setTimeout(function(){
+				$("#copyToClipboard").html("Copy JSON");
+			},500);
+		});
 		$('#dataform_list').DataTable({
 			//"scrollX": true
 		});
@@ -153,12 +157,18 @@ Drupal.behaviors.mongodb_api = {
 		});
 		
 		$("input[name$='[select_all]']").click(function(){
-			curLevel = $(this).attr("data-attr").split("-");
+			curLevel = $(this).attr("data-attr").split("###");
 
 			if($(this).is(":checked"))
 				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",true);
 			else
 				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",false);
 		});
+		
+		/* document.getElementById('edit-email').addEventListener('invalid', function () {
+		  if (this.value.trim() !== '') {
+			this.setCustomValidity("'" + this.value + "' is not a valid email bro!");
+		  }
+		}, false); */
 	});
 })(jQuery, Drupal);

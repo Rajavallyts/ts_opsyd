@@ -333,6 +333,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  drupal_set_message("Updated changes successfully");
 		  curl_close ($ch);
 	  }	 
+	  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+	  if($showHideJson == "Yes")
 	  drupal_set_message($server_output);
   }
 

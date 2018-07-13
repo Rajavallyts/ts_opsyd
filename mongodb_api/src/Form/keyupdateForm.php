@@ -70,7 +70,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						'#default_value' => $resultkey,						
 					);
 
-					$form['document'][$i]['document'] = add_sublevel($resultkey, $resultValue);
+					$form['document'][$i]['document'] = add_sublevel($resultkey, $resultkey, $resultValue);
 				} else {
 			
 				$form['document'][$i]['key'] = array(
@@ -123,11 +123,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			
 			foreach($document_values as $document_value)
 			{
+				$doc_key = $document_value['key'];
 				if(isset($document_value['document']) && count($document_value['document']) > 0){
-					$updateWith .= add_sublevel_submit($document_value['key'],$document_value['document']);
+					$updateWith .= add_sublevel_submit($doc_key,$document_value['document']);
 				}else{
 					if (isset($document_value['valuee']) && $document_value['valuee'] != "") {
-						$updateWith .= '"' . $document_value['key'] . '":"' . $document_value['valuee'] . '",';
+						$updateWith .= '"' . $doc_key . '":"' . $document_value['valuee'] . '",';
 					}
 				}
 			}
@@ -148,13 +149,14 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			drupal_set_message("Changes saved successfully");
 			curl_close ($ch);	
 		}
+		//drupal_set_message($server_output);
 		$redirect_url = $base_url.'/mongodb_api/managedocument?mongodb_collection='.$_GET['mongodb_collection'].'&document_id='.$_GET['document_id'];
 		$response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
 		$response->send();
 	}
 }
 
-function add_sublevel($resultKey, $resultValue)
+function add_sublevel($resultKey, $parentKey, $resultValue)
 {
 	global $base_url;
 	$document_id = $_GET['document_id'];
@@ -173,7 +175,7 @@ function add_sublevel($resultKey, $resultValue)
 			);
 
 			$form[$j]['edit'] = array(
-				'#markup' => "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url."/mongodb_api/parentkeyupdate?mongodb_collection=".$collection_name."&document_id=".$document_id."&key=".$resultKey."_".$key."'>edit ".$key."</a>",
+				'#markup' => "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url."/mongodb_api/parentkeyupdate?mongodb_collection=".$collection_name."&document_id=".$document_id."&key=".$parentKey."___".$key."'>edit ".$key."</a>",
 			);
 
 			$form[$j]['key'] = array(
@@ -181,7 +183,7 @@ function add_sublevel($resultKey, $resultValue)
 				'#default_value' => $key,						
 			);
 			
-			$form[$j]['document'] = add_sublevel($key, $value);
+			$form[$j]['document'] = add_sublevel($key, $parentKey."___".$key, $value);
 		} else {
 			$form[$j]['key'] = array(
 				'#type' => 'textfield',      
@@ -213,11 +215,13 @@ function add_sublevel_submit($key, $document_values){
 	$updateWith = '';
 	foreach($document_values as $document_value)
 	{
+		$doc_key = $document_value['key'];
+		
 		if(isset($document_value['document']) && count($document_value['document']) > 0){
-			$updateWith .= add_sublevel_submit($key.'.'.$document_value['key'],$document_value['document']);
+			$updateWith .= add_sublevel_submit($key.'.'.$doc_key,$document_value['document']);
 		}else{
 			if (isset($document_value['valuee']) && $document_value['valuee'] != "") {
-				$updateWith .= '"'.$key.".".$document_value['key'] . '":"'.$key.".". $document_value['valuee'] . '",';
+				$updateWith .= '"'.$key.".".$doc_key . '":"'.$key.".". $document_value['valuee'] . '",';
 			}
 		}
 	}

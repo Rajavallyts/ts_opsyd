@@ -89,8 +89,6 @@ class importdbForm extends FormBase {
 				'type' => 'csv',
 				'headerline' => true
 			];
-			drupal_set_message("api_param ===>" . print_r($api_param,true));
-			drupal_set_message("api_param ===>" . $api_endpointurl);
 			$headers = array("Content-Type:multipart/form-data");				
 			$ch = curl_init();
 				
@@ -103,6 +101,8 @@ class importdbForm extends FormBase {
 			$server_output = curl_exec ($ch);	
 			curl_close ($ch);
 			
+			$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+			if($showHideJson == "Yes")
 			drupal_set_message($server_output);
 		}
 	}

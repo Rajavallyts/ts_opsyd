@@ -1,3 +1,10 @@
+mongodb_api.welcome:
+  path: /admin/mongodb_api
+  defaults:
+    _controller: 'Drupal\mongodb_api\Controller\mongodb_apiController::indexPage'
+    _title: 'MongoDB API'
+  requirements:
+    _permission: 'configure_form'  
 mongodb_api.admin_config:
   path: /admin/config/system/mongodbsetting
   defaults:
@@ -243,3 +250,10 @@ mongodb_api.addgroupuser:
       _title: 'Create a new user'
    requirements:
       _permission: 'administer mongodb_api'
+mongodb_api.mdb_schema:
+  path: /mongodb_api/mdb_schema
+  defaults:
+    _form: 'Drupal\mongodb_api\Form\mdbschemaForm'
+    _title: 'Mongodb Schema'
+  requirements:
+    _permission: 'administer mongodb_api'      

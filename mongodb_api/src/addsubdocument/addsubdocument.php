@@ -180,11 +180,6 @@ $modal_form = \Drupal::formBuilder()->getForm($form_obj);
 		 }
 		 $updateWith = substr($updateWith,0, strlen($updateWith)-1) . "}}";		 
 	  
-/*  $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $_GET['mongodb_collection'] ."/insert";
-		  $api_param = array ( 		    
-			"token" => $_SESSION['mongodb_token'], 
-			"document" => $updateWith);*/
-			
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $_GET['mongodb_collection'] ."/update";
 		  $api_param = array ( 
 		    "query" => '{"_id":"'.$_GET['document_id'].'"}', 
@@ -199,7 +194,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		  $server_output = curl_exec ($ch);		
 		  curl_close ($ch);
-		 
+		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		if($showHideJson == "Yes")
 	      drupal_set_message($server_output);
 	      $json_result = json_decode($server_output, true);
 		  if (isset($json_result['success'])) {

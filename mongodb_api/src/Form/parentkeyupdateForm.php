@@ -17,20 +17,21 @@ class parentkeyupdateForm extends FormBase{
 	*/
 	public function buildForm(array $form, FormStateInterface $form_state){
 		
+		global $base_url;
 		$document_id = $_GET['document_id'];
 		$collection_name = $_GET['mongodb_collection'];
 		
 		$key = $_GET['key'];
 		
-		if (strpos($key, '_') !== false) {
-			$keyparts = explode("_",$key);
+		if (strpos($key, '___') !== false) {
+			$keyparts = explode("___",$key);
 		}
 		
-		$cur_key = isset($keyparts) ? $keyparts[1] : $key;
+		$cur_key = isset($keyparts) ? $keyparts[ count($keyparts)-1 ] : $key;
 		
 		$form['api_result'] = array (
 			'#type' => 'markup',
-			'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$collection_name."' target='_self'>".$collection_name."</a> > <a href='".$base_url. "/mongodb_api/managedocument?mongodb_collection=".$collection_name."&document_id=".$_document_id."' target='_self'>".$document_id."</a> > ".$cur_key. "</b><br><br>",
+			'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$collection_name."' target='_self'>".$collection_name."</a> > <a href='".$base_url. "/mongodb_api/managedocument?mongodb_collection=".$collection_name."&document_id=".$document_id."' target='_self'>".$document_id."</a> > ".$cur_key. "</b><br><br>",
 		);
 		
 		$form['key'] = array(
@@ -74,15 +75,30 @@ class parentkeyupdateForm extends FormBase{
 			$collection_name = $_GET['mongodb_collection'];
 			
 			$key = $_GET['key'];
-			if (strpos($key, '_') !== false) {
-				$keyparts = explode("_",$key);
+			if (strpos($key, '___') !== false) {
+				$keyparts = explode("___",$key);
 			}
 			$value = $form_state->getValue("valuee");
 			
-			if(isset($keyparts))
-				$updateWith = '{"'.$keyparts[0].'.'.$keyparts[1].'":"'.$keyparts[0].'.'.$value.'"}';
-			else
+			if(isset($keyparts)){
+				// prefix
+				$updateWith = '{"';
+				foreach($keyparts as $keypart){
+					$updateWith .= $keypart.'.';
+				}
+				$updateWith = substr($updateWith,0, strlen($updateWith)-1);
+				
+				$updateWith .= '":"';
+				
+				//suffix
+				for($i=0;$i<count($keyparts)-1;$i++){
+					$updateWith .= $keyparts[$i].'.';
+				}
+				$updateWith = substr($updateWith,0, strlen($updateWith)-1).'.'.$value;
+				$updateWith .= '"}';
+			}else{
 				$updateWith = '{"'.$key.'":"'.$value.'"}';
+			}
 			
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $_GET['mongodb_collection'] ."/updateKeys";		  
 			$api_param = array ( 
@@ -99,6 +115,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			drupal_set_message("Updated changes successfully");
 			curl_close ($ch);	
 		}
+		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		if($showHideJson == "Yes")
 		drupal_set_message($server_output);
 	}
 }

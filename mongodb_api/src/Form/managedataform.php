@@ -237,7 +237,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$coll_rel = CollectionRelations::load($webform_elements[$field]["#entity_id"]);
 						$rel_collection = $coll_rel->field_relative_collection->value;
 						$rel_key 		= $coll_rel->field_relative_key->value;
+						if (strpos($rel_key, '###') !== false) {
+							$rel_keys = explode("###",$rel_key);
+							$rel_key = $rel_keys[count($rel_keys)-1];
+						}
 						$rel_value 		= $coll_rel->field_relative_value->value;
+						if (strpos($rel_value, '###') !== false) {
+							$rel_values = explode("###",$rel_value);
+							$rel_value = $rel_values[count($rel_values)-1];
+						}
 						
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/". $rel_collection."/find";
 						$api_param = array ( "token" => $_SESSION['mongodb_token']);
@@ -288,6 +296,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$attributes_array = [];
 						if(!empty($webform_elements[$field]["#text_field_type"])){
 							$text_field_type =  $webform_elements[$field]["#text_field_type"];
+							if($text_field_type = "email")
+								$attributes_array["pattern"] = "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$";
 						}
 						
 						if($multiple_attr){
@@ -310,6 +320,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							  '#suffix' => '</div>',
 							];
 							
+							$text_field_value = array();
 							for ($k = 0; $k < $num_names; $k++) {
 								if(isset($json_result[$field]) && !empty($json_result[$field])){
 									if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
@@ -740,11 +751,12 @@ public function submitForm(array &$form, FormStateInterface $form_state) {
 		foreach($form_data as $key => $data){
 			if(is_object($data)){
 				$existing_data->$key = (object) subdoc_replace($data,$existing_data->$key);
-			}else
+			}else{
 				$existing_data->$key = $data;
+			}
 		}
 		
-		$new_data = json_encode($existing_data);
+		$updateWith = json_encode($existing_data);
 	}
 		 
 	if(!empty($document_id)){
@@ -752,7 +764,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		 $api_param = array ( 
 		    "query" => '{"_id":"'.$document_id.'"}', 
 			"token" => $_SESSION['mongodb_token'], 
-			"updateWith" => $new_data
+			"updateWith" => $updateWith
 		);
 	}else{
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $mongodb_collection ."/insert";
@@ -864,8 +876,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		}
 		$j++;
 	}
-	
-	return $error_msg;
 }
 
 function addsublevel_submit($document_values){
@@ -1130,7 +1140,15 @@ function addsublevel($webform_elements, $json_result = array(), $form_state)
 				$coll_rel = CollectionRelations::load($webform_elements[$field]["#entity_id"]);
 				$rel_collection = $coll_rel->field_relative_collection->value;
 				$rel_key 		= $coll_rel->field_relative_key->value;
+				if (strpos($rel_key, '###') !== false) {
+					$rel_keys = explode("###",$rel_key);
+					$rel_key = $rel_keys[count($rel_keys)-1];
+				}
 				$rel_value 		= $coll_rel->field_relative_value->value;
+				if (strpos($rel_value, '###') !== false) {
+					$rel_values = explode("###",$rel_value);
+					$rel_value = $rel_values[count($rel_values)-1];
+				}
 				
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/". $rel_collection."/find";
 				$api_param = array ( "token" => $_SESSION['mongodb_token']);
@@ -1181,9 +1199,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$attributes_array = [];
 				if(!empty($webform_elements[$field]["#text_field_type"])){
 					$text_field_type =  $webform_elements[$field]["#text_field_type"];
-					if($text_field_type == "number" || $text_field_type == "float"){
-						$text_field_type = "number";
-					}
+					if($text_field_type = "email")
+						$attributes_array["pattern"] = "[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,3}$";
 				}
 				
 				if($multiple_attr){
@@ -1206,6 +1223,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					  '#suffix' => '</div>',
 					];
 					
+					$text_field_value = array();
 					for ($l = 0; $l < $sub_num_names; $l++) {
 						if(isset($json_result[$field]) && !empty($json_result[$field])){
 							if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){

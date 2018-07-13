@@ -105,3 +105,8 @@ mongodb_api.dataformsdocument:
   title: Data Form Documents
   base_route: mongodb_api.dataformslist
   weight: 180
+mongodb_api.mdb_schema:
+  route_name: mongodb_api.mdb_schema
+  title: Mongodb Schema
+  base_route: mongodb_api.listcollection
+  weight: 190

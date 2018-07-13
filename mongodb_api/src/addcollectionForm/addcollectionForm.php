@@ -5,6 +5,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use \Drupal\node\Entity\Node;
 use \Drupal\file\Entity\File;
+use Drupal\mdbschema\Entity\MDBSchema;
 
 class addcollectionForm extends FormBase {
   /**
@@ -62,11 +63,25 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		  $server_output = curl_exec ($ch);		
 		  curl_close ($ch);
+		  
+		  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		  if($showHideJson == "Yes")
 		  drupal_set_message($server_output);
 		  
 		  $json_result = json_decode($server_output, true);
 		  if (isset($json_result['success'])) {
 			if ($json_result['success'] == 1) {
+				$query = \Drupal::entityQuery('mdb_schema')
+							->condition('status', 1)
+							->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=');
+				$mdbschemas = $query->execute();
+				if(count($mdbschemas) > 0){
+					$mdbschema = MDBSchema::load(array_keys($mdbschemas)[0]);			
+					$oldlist = $mdbschema->field_mongodb_collections->value;
+					
+					$mdbschema->set('field_mongodb_collections',$oldlist.", ".$collection_name['collection_name']);
+					$mdbschema->save();
+				}				
 			  drupal_set_message ("Added collection successfully");
 			  $redirect_url = $base_url . '/mongodb_api/listcollection';
 			  $response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);

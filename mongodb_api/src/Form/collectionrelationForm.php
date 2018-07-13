@@ -15,7 +15,7 @@ class collectionrelationForm extends FormBase {
 	* {@inheritdoc}
 	*/
 	public function getFormId() {
-		return 'collection_relationform';
+		return 'collection_relation_form';
 	}
   
 	/**
@@ -45,119 +45,128 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				endforeach;				
 			}
 		
-		$source_collection = $relative_collection = $source_key = $relative_key = $relative_value = '';
-		if(isset($_GET["coll_ref"])){
-			$coll_rel = CollectionRelations::load($_GET["coll_ref"]);
-			$source_collection = $coll_rel->field_source_collection->value;
-			$relative_collection = $coll_rel->field_relative_collection->value;
-			$source_key = $coll_rel->field_source_key->value;
-			$relative_key = $coll_rel->field_relative_key->value;
-			$relative_value = $coll_rel->field_relative_value->value;
+		// collection relation
+		if((isset($_GET["add"]) && $_GET["add"] == "coll") || isset($_GET["coll_rel"])){
+			$source_collection = $relative_collection = $source_key = $relative_key = $relative_value = '';
+					if($_GET["coll_rel"] != ""){
+						$coll_rel = CollectionRelations::load($_GET["coll_rel"]);
+				$source_collection = $coll_rel->field_source_collection->value;
+				$relative_collection = $coll_rel->field_relative_collection->value;
+				$source_key = $coll_rel->field_source_key->value;
+				$relative_key = $coll_rel->field_relative_key->value;
+				$relative_value = $coll_rel->field_relative_value->value;
+			}
+			
+			$form['coll_set1_start'] = [
+				'#markup' => '<div class="collections-set">'
+			];
+			
+			$form['source_collection'] = [
+				'#type' => 'select',
+				'#name' => 'source_collection',
+				'#title' => t('Source Collection'),
+				'#required' => TRUE,
+				'#options' => $collection_list,
+				'#empty_option' => $this->t('Select'),
+				'#default_value' => !empty($form_state->getValue("source_collection")) ? $form_state->getValue("source_collection") : $source_collection,
+				'#ajax' => [
+					'callback' => '::getKeyList',
+				],
+				'#prefix' => '<div id="source_collection">',
+				'#suffix' => '</div>'
+			];
+			
+			if(!empty($source_collection)){
+				$source_collection_options = $source_collection;
+			}
+			if(!empty($form_state->getValue("source_collection"))){
+				$source_collection_options = $form_state->getValue("source_collection");
+			}
+			$form['source_key'] = [
+				'#type' => 'select',
+				'#title' => t('Source key'),
+				'#required' => TRUE,
+				'#options' => getKeyArray($source_collection_options),
+				'#empty_option' => $this->t('Select'),
+				'#default_value' => !empty($form_state->getValue("source_key")) ? $form_state->getValue("source_key") : $source_key,
+				'#prefix' => '<div id="source_key">',
+				'#suffix' => '</div>',
+				'#validated' => TRUE
+			];
+			
+			$form['coll_set1_end'] = [
+				'#markup' => '</div>'
+			];
+			
+			$form['coll_set2_start'] = [
+				'#markup' => '<div class="collections-set">'
+			];
+			
+			$form['relative_collection'] = [
+				'#type' => 'select',
+				'#name' => 'relative_collection',
+				'#title' => t('Relative Collection'),
+				'#required' => TRUE,
+				'#options' => $collection_list,
+				'#empty_option' => $this->t('Select'),
+				'#default_value' => !empty($form_state->getValue("relative_collection")) ? $form_state->getValue("relative_collection") : $relative_collection,
+				'#ajax' => [
+					'callback' => '::getKeyList',
+				],
+				'#prefix' => '<div id="relative_collection">',
+				'#suffix' => '</div>'
+			];
+			
+			if(!empty($relative_collection)){
+				$relative_collection_options = $relative_collection;
+			}
+			if(!empty($form_state->getValue("relative_collection"))){
+				$relative_collection_options = $form_state->getValue("relative_collection");
+			}
+			$form['relative_key'] = [
+				'#type' => 'select',
+				'#title' => t('Relative key'),
+				'#required' => TRUE,
+				'#options' => getKeyArray($relative_collection_options),
+				'#empty_option' => $this->t('Select'),
+				'#default_value' => !empty($form_state->getValue("relative_key")) ? $form_state->getValue("relative_key") : $relative_key,
+				'#prefix' => '<div id="relative_key">',
+				'#suffix' => '</div>',
+				'#validated' => TRUE
+			];
+			
+			$form['relative_value'] = [
+				'#type' => 'select',
+				'#title' => t('Relative value'),
+				'#required' => TRUE,
+				'#options' => getKeyArray($relative_collection_options),
+				'#empty_option' => $this->t('Select'),
+				'#default_value' => !empty($form_state->getValue("relative_value")) ? $form_state->getValue("relative_value") : $relative_value,
+				'#prefix' => '<div id="relative_value">',
+				'#suffix' => '</div>',
+				'#validated' => TRUE
+			];
+		
+			$form['coll_set2_end'] = [
+				'#markup' => '</div>'
+			];
+		
+			$form['coll_rel'] = [
+				'#type' => 'hidden',
+				'#value' => isset($_GET["coll_rel"]) ? $_GET["coll_rel"] : ''
+			];
 		}
 		
-		$form['coll_set1_start'] = [
-			'#markup' => '<div class="collections-set">'
-		];
-		
-		$form['source_collection'] = [
-			'#type' => 'select',
-			'#name' => 'source_collection',
-			'#title' => t('Source Collection'),
-			'#required' => TRUE,
-			'#options' => $collection_list,
-			'#empty_option' => $this->t('Select'),
-			'#default_value' => !empty($form_state->getValue("source_collection")) ? $form_state->getValue("source_collection") : $source_collection,
-			'#ajax' => [
-				'callback' => '::getKeyList',
-			],
-			'#prefix' => '<div id="source_collection">',
-			'#suffix' => '</div>'
-		];
-		
-		if(!empty($source_collection)){
-			$source_collection_options = $source_collection;
-		}
-		if(!empty($form_state->getValue("source_collection"))){
-			$source_collection_options = $form_state->getValue("source_collection");
-		}
-		$form['source_key'] = [
-			'#type' => 'select',
-			'#title' => t('Source key'),
-			'#required' => TRUE,
-			'#options' => getKeyArray($source_collection_options),
-			'#empty_option' => $this->t('Select'),
-			'#default_value' => !empty($form_state->getValue("source_key")) ? $form_state->getValue("source_key") : $source_key,
-			'#prefix' => '<div id="source_key">',
-			'#suffix' => '</div>',
-			'#validated' => TRUE
-		];
-		
-		$form['coll_set1_end'] = [
-			'#markup' => '</div>'
-		];
-		
-		$form['coll_set2_start'] = [
-			'#markup' => '<div class="collections-set">'
-		];
-		
-		$form['relative_collection'] = [
-			'#type' => 'select',
-			'#name' => 'relative_collection',
-			'#title' => t('Relative Collection'),
-			'#required' => TRUE,
-			'#options' => $collection_list,
-			'#empty_option' => $this->t('Select'),
-			'#default_value' => !empty($form_state->getValue("relative_collection")) ? $form_state->getValue("relative_collection") : $relative_collection,
-			'#ajax' => [
-				'callback' => '::getKeyList',
-			],
-			'#prefix' => '<div id="relative_collection">',
-			'#suffix' => '</div>'
-		];
-		
-		if(!empty($relative_collection)){
-			$relative_collection_options = $relative_collection;
-		}
-		if(!empty($form_state->getValue("relative_collection"))){
-			$relative_collection_options = $form_state->getValue("relative_collection");
-		}
-		$form['relative_key'] = [
-			'#type' => 'select',
-			'#title' => t('Relative key'),
-			'#required' => TRUE,
-			'#options' => getKeyArray($relative_collection_options),
-			'#empty_option' => $this->t('Select'),
-			'#default_value' => !empty($form_state->getValue("relative_key")) ? $form_state->getValue("relative_key") : $relative_key,
-			'#prefix' => '<div id="relative_key">',
-			'#suffix' => '</div>',
-			'#validated' => TRUE
-		];
-		
-		$form['relative_value'] = [
-			'#type' => 'select',
-			'#title' => t('Relative value'),
-			'#required' => TRUE,
-			'#options' => getKeyArray($relative_collection_options),
-			'#empty_option' => $this->t('Select'),
-			'#default_value' => !empty($form_state->getValue("relative_value")) ? $form_state->getValue("relative_value") : $relative_value,
-			'#prefix' => '<div id="relative_value">',
-			'#suffix' => '</div>',
-			'#validated' => TRUE
-		];
-		
-		$form['coll_set2_end'] = [
-			'#markup' => '</div>'
-		];
-		
-		$form['coll_ref'] = [
-			'#type' => 'hidden',
-			'#value' => isset($_GET["coll_ref"]) ? $_GET["coll_ref"] : ''
-		];
-		
+			if(isset($_GET["add"]) || isset($_GET["coll_rel"])){
 		$form['submit'] = [
 			'#type' => 'submit',
 			'#value' => t('Save Changes')
 		];
+		}else{
+			$form['notice'] = [
+					'#markup' => "<BR><BR>Please select a <a href='" . $base_url . "/mongodb_api/collectionrelation' alt='Collection Relation' title='Collection Relation'>Collection Relation</a>"
+				];
+			}
 		}else{
 			$form['notice'] = [
 				'#markup' => "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>"
@@ -217,19 +226,21 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	public function validateForm(array &$form, FormStateInterface $form_state) {
 		
 		$form_values = $form_state->getValues();
-		$query = \Drupal::entityQuery('collection_relations')
-			->condition('status', 1)
-			->condition('field_source_collection', trim($form_values["source_collection"]), '=')
-			->condition('field_relative_collection', trim($form_values['relative_collection']), '=')
-			->condition('field_source_key', trim($form_values['source_key']), '=')
-			->condition('field_relative_key', trim($form_values['relative_key']), '=')
-			->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=');
-			//->condition('field_relative_value', trim($form_values['relative_value']), '=');
-		$coll_ids = $query->execute();
-		
-		if(!empty($coll_ids)){
-			if($form_values["coll_ref"] != array_keys($coll_ids)[0])
-				$form_state->setErrorByName('source_collection', $this->t('This combination of relationship is already exist.'));
+		// collection relation
+		if((isset($_GET["add"]) && $_GET["add"] == "coll") || isset($_GET["coll_rel"])){
+			$query = \Drupal::entityQuery('collection_relations')
+				->condition('status', 1)
+				->condition('field_source_collection', trim($form_values["source_collection"]), '=')
+				->condition('field_relative_collection', trim($form_values['relative_collection']), '=')
+				->condition('field_source_key', trim($form_values['source_key']), '=')
+				->condition('field_relative_key', trim($form_values['relative_key']), '=')
+				->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=');
+			$coll_ids = $query->execute();
+			
+			if(!empty($coll_ids)){
+					if($form_values["coll_rel"] != array_keys($coll_ids)[0])
+					$form_state->setErrorByName('source_collection', $this->t('This combination of relationship is already exist.'));
+			}
 		}
 	}
 
@@ -240,26 +251,28 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		
 		global $base_url;
 		$form_values = $form_state->getValues();
-		
-		if(!empty($form_values["coll_ref"])){
-			$coll_relation = CollectionRelations::load($form_values["coll_ref"]);
-			$coll_relation->set('field_source_collection',trim($form_values["source_collection"]));
-			$coll_relation->set('field_relative_collection',trim($form_values['relative_collection']));
-			$coll_relation->set('field_source_key',trim($form_values['source_key']));
-			$coll_relation->set('field_relative_key',trim($form_values['relative_key']));
-			$coll_relation->set('field_relative_value',trim($form_values['relative_value']));
-			$coll_relation->set('field_mongodb_connection_ref',$_SESSION['mongodb_nid']);
-			$coll_relation->save();
-		}else{
-			$coll_relation = CollectionRelations::create([
-			   'field_source_collection' => trim($form_values["source_collection"]),
-			   'field_relative_collection' => trim($form_values['relative_collection']),
-			   'field_source_key' => trim($form_values['source_key']),
-			   'field_relative_key' => trim($form_values['relative_key']),
-			   'field_relative_value' => trim($form_values['relative_value']),
-			   'field_mongodb_connection_ref' => $_SESSION['mongodb_nid']
-			]);  
-			$coll_relation->save();
+		// collection relation
+		if((isset($_GET["add"]) && $_GET["add"] == "coll") || isset($_GET["coll_rel"])){
+			if(!empty($form_values["coll_rel"])){
+				$coll_relation = CollectionRelations::load($form_values["coll_rel"]);
+				$coll_relation->set('field_source_collection',trim($form_values["source_collection"]));
+				$coll_relation->set('field_relative_collection',trim($form_values['relative_collection']));
+				$coll_relation->set('field_source_key',trim($form_values['source_key']));
+				$coll_relation->set('field_relative_key',trim($form_values['relative_key']));
+				$coll_relation->set('field_relative_value',trim($form_values['relative_value']));
+				$coll_relation->set('field_mongodb_connection_ref',$_SESSION['mongodb_nid']);
+				$coll_relation->save();
+			}else{
+				$coll_relation = CollectionRelations::create([
+				   'field_source_collection' => trim($form_values["source_collection"]),
+				   'field_relative_collection' => trim($form_values['relative_collection']),
+				   'field_source_key' => trim($form_values['source_key']),
+				   'field_relative_key' => trim($form_values['relative_key']),
+				   'field_relative_value' => trim($form_values['relative_value']),
+				   'field_mongodb_connection_ref' => $_SESSION['mongodb_nid']
+				]);  
+				$coll_relation->save();
+			}
 		}
 	
 		drupal_set_message(t("Changes saved Successfully."));
@@ -290,15 +303,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			}
 	$json_result = $new_json;
 	
-	$key_array = array();
+	$key_array = array('' => t('Select'));
 	if(!empty($json_result)){
 		foreach($json_result as $resultkey => $resultValue){
 			//if($resultkey != "_id"){
 				if (is_array($resultValue) && is_associative($resultValue)){
 				$sub_key_arrays = nestedkeylevel($resultkey, $resultValue);
-				$sub_arrays = explode("##",rtrim($sub_key_arrays,"##"));
+					$sub_arrays = explode("$$$",rtrim($sub_key_arrays,"$$$"));
 				foreach($sub_arrays as $sub_array){
-						$key_array[$sub_array] = $sub_array;
+						$key_array[$sub_array] = str_replace("###",".",$sub_array);
 					}
 				} else {					
 					$key_array[$resultkey] = $resultkey;
@@ -314,9 +327,9 @@ function nestedkeylevel($subKey, $subResultValue){
 	$array_index = '';
 	foreach($subResultValue as $key => $value){
 		if (is_array($value) && is_associative($value)){
-			$array_index .= nestedkeylevel($subKey.'.'.$key, $value);
+			$array_index .= nestedkeylevel($subKey.'$$$'.$key, $value);
 		} else {					
-			$array_index .= $subKey.'.'.$key."##";
+			$array_index .= $subKey.'###'.$key."$$$";
 		}
 	}
 	

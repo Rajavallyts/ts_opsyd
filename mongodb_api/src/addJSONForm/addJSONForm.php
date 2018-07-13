@@ -83,6 +83,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  $server_output = curl_exec ($ch);		
 		  curl_close ($ch);
 		 //$form_state->setRebuild();
+		 $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		 if($showHideJson == "Yes")
 	      drupal_set_message($server_output);
 	      $json_result = json_decode($server_output, true);
 		  if (isset($json_result['success'])) {

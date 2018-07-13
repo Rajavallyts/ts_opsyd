@@ -140,21 +140,32 @@ margin-top: 10px;
     font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-#collection-relationform select{
-	width:60%;
+#collection-relation-form select{
+	width:80%;
 }
-.collections-set{
+#collection-field-relation-form select{
+	width:90%;
+}
+#collection-relation-form .collections-set{
 	float:left;
 	width:50%;
 }
-#collection-relationform #edit-submit{
+#collection-field-relation-form .collections-set{
+	float:left;
+	width:25%;
+}
+#collection-field-relation-form #edit-source-collection{
+	width:25%;
+}
+#collection-relation-form #edit-submit, #collection-field-relation-form #edit-submit{
+	float:left;
 	clear:both;
 }
 .ajax-progress .message{
 	display:none !important;
 }
 .collections-field-set select#edit-source-collection {
-    width: 80%;
+    width: 50%;
 }
 .collections-field-set .form-item {
     margin-bottom: 0px;
@@ -224,4 +235,10 @@ ul.sf-menu.menu, ul.sf-menu.menu ul, ul.sf-menu.menu li {
 .path-mongodb-list .indicator.active{
 	background-image: url(../images/indicator.png);
 	background-size: cover;
+}
+
+.mongo-data-table .view-content{
+	background: rgba(0, 0, 0, 0.105);
+	padding: 0.1em 0.6em;
+	margin: 10px 0;
 }
