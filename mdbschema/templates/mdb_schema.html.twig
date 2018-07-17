@@ -1,0 +1,22 @@
+{#
+/**
+ * @file mdb_schema.html.twig
+ * Default theme implementation to present Mdbschema data.
+ *
+ * This template is used when viewing Mdbschema pages.
+ *
+ *
+ * Available variables:
+ * - content: A list of content items. Use 'content' to print all content, or
+ * - attributes: HTML attributes for the container element.
+ *
+ * @see template_preprocess_mdb_schema()
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes.addClass('mdb_schema') }}>
+  {% if content %}
+    {{- content -}}
+  {% endif %}
+</div>

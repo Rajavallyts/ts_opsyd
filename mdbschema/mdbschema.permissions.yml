@@ -1,0 +1,19 @@
+add mdbschema entities:
+  title: 'Create new Mdbschema entities'
+
+administer mdbschema entities:
+  title: 'Administer Mdbschema entities'
+  description: 'Allow to access the administration form to configure Mdbschema entities.'
+  restrict access: true
+
+delete mdbschema entities:
+  title: 'Delete Mdbschema entities'
+
+edit mdbschema entities:
+  title: 'Edit Mdbschema entities'
+
+view published mdbschema entities:
+  title: 'View published Mdbschema entities'
+
+view unpublished mdbschema entities:
+  title: 'View unpublished Mdbschema entities'

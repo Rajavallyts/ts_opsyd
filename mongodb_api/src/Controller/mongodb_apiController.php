@@ -804,8 +804,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		'#header' => [t('List of collection realationships')],			
 		'#rows' => [
 				[render($tablerows1)]
-			]
-		];
 		]
 	];
 

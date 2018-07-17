@@ -104,10 +104,9 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 {
 	$current_user = \Drupal::currentUser();
 	$roles = $current_user->getRoles();
-	
 	if($form_id == "user_form"){
 		
-		/* // hide "request-rol"e field in user's page
+		// hide "request-rol"e field in user's page
 		if(in_array("datamanager",$roles)){
 			unset($form["field_request_role"]);
 		}
@@ -119,18 +118,11 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 				  $form['actions'][$action]['#submit'][] = 'custom_profile_submit';
 				}
 			}
-		} */
-		
-		$form['actions'][$action]['#submit'][] = 'sync_user_values';
 		}
-	
-	if($form_id == "user_login_form"){
-		$form['name']['#title'] = t('Username or Email');
-		$form['name']['#description'] = t('Enter your ISF Tech In-Home Tool username or email.');
 	}
 
+	if($current_user->id() == 0){
 		if($form_id == "user_register_form"){
-		/* if($current_user->id() == 0){
 			$form["request_role"] = array(
 				'#title' => t('Request Role'),
 				'#type' => 'select',
@@ -142,10 +134,6 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 			);
 		
 			$form['actions']['submit']['#submit'][] = 'custom_user_register_submit';
-		} */
-		
-		if($current_user->id()){
-			$form['actions']['submit']['#submit'][] = 'sync_user_values';
 		}
 	}
 }
@@ -190,20 +178,6 @@ function custom_profile_submit(&$form, \Drupal\Core\Form\FormStateInterface $for
 			$group->addContent($datauser, 'group_membership');
 		}
 	}
-}
-
-function sync_user_values(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-	
-    $uid = trim($form_state->getValue("uid"));
-    $status = trim($form_state->getValue("status"));
-    $mail = trim($form_state->getValue("mail"));
-
-    $user = \Drupal\user\Entity\User::load($uid);
-	if($user){
-        $user->set("field_status", $status);
-        $user->set("field_email", $mail);
-		$user->save();
-    }
 }
 
 /*
@@ -267,7 +241,6 @@ function mongodb_api_form_node_mongodb_information_edit_form_alter(&$form, \Drup
 	$form['actions']['submit_connect'] = array
 	(
 		'#type' => 'submit',
-		'#name' => 'submit_connect',
 		'#value' => t('Save and Connect'),
 		'#submit' => $submit_action,
 		'#button_type' => 'primary',
@@ -366,7 +339,7 @@ function mongodb_submit_connect(&$form, &$form_state)
 		$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
 		$response->send();
 		return;
-		}
+	}
 }
 
 
@@ -459,30 +432,23 @@ function mongodb_api_page_attachments(array &$attachments) {
 		
 	global $base_url;
 	
-	$group_ids = [];
-	$output_html = '';
+	$group_id = $output_html = '';
 	$membership_loader = \Drupal::service('group.membership_loader');
 	if(!empty($membership_loader)){
 		foreach ($membership_loader->loadByUser(\Drupal::currentUser()) as $group_membership) {
-			$group_ids[] = $group_membership->getGroup()->id();
+			$group_id = $group_membership->getGroup()->id();
 		}
 	}
 	
 	$webform_ids = array();
-	if(count($group_ids) > 0){
-		$group_type = \Drupal::config('isftech_setting.settings')->get('isftech_conn_group_type');
-		foreach($group_ids as $group_id):
+	if(!empty($group_id)){
 		$group = Drupal\group\Entity\Group::load($group_id);
-			
-			if ($group->getGroupType()->id() != $group_type):
 		foreach($group->getContent() as $key => $content){
 			if(strpos($content->getGroupContentType()->id(), 'group_node-webform') !== false){
 				$nodeDetails = $content->getEntity();
 				$webform_ids[]  = $nodeDetails->get("webform")->getValue()[0]["target_id"];
 			}
 		}
-			endif;
-		endforeach;
 	}	
 	
 	if (count($webform_ids)) {				
@@ -752,56 +718,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 }
 
 function mongodb_api_group_insert(Drupal\Core\Entity\EntityInterface $entity) {
-	global $base_url;
-
-	$webforms_array = [];
-	$webforms_array[] = \Drupal::config('isftech_setting.settings')->get('isftech_conn_location');
-	$webforms_array[] = \Drupal::config('isftech_setting.settings')->get('isftech_conn_corporate');
-	$webforms_array[] = \Drupal::config('isftech_setting.settings')->get('isftech_conn_francises');
-	$con = \Drupal\Core\Database\Database::getConnection();
-	$webforms = $con->select('node__webform', 'nw')
-					->fields('nw', ['entity_id','webform_target_id'])
-					->condition('webform_target_id', $webforms_array, 'IN')
-					->execute()->fetchAll();	
-	
-	foreach($webforms as $webform){
-		if($webform->webform_target_id == \Drupal::config('isftech_setting.settings')->get('isftech_conn_location'))
-			$mongodb_franchise_id = $webform->entity_id;
-		if($webform->webform_target_id == \Drupal::config('isftech_setting.settings')->get('isftech_conn_corporate'))
-			$mongodb_corptech_id = $webform->entity_id;
-		if($webform->webform_target_id == \Drupal::config('isftech_setting.settings')->get('isftech_conn_francises'))
-			$mongodb_franchisetech_id = $webform->entity_id;
-	}
-	$mongodb_connection_id = \Drupal::config('isftech_setting.settings')->get('isftech_conn_node');
-	
-	$mongodb_connection = \Drupal::entityTypeManager()->getStorage("node")->load($mongodb_connection_id);
-	$mongodb_franchise = \Drupal::entityTypeManager()->getStorage("node")->load($mongodb_franchise_id);
-	$mongodb_corptech = \Drupal::entityTypeManager()->getStorage("node")->load($mongodb_corptech_id);
-	$mongodb_franchisetech = \Drupal::entityTypeManager()->getStorage("node")->load($mongodb_franchisetech_id);
-	
+	 $mongodb_connection = \Drupal::entityTypeManager()->getStorage("node")->load(44);
 	$entity->addContent($mongodb_connection, 'group_node:mongodb_information');
-	$entity->addContent($mongodb_franchise, 'group_node:webform');
-	$entity->addContent($mongodb_corptech, 'group_node:webform');
-	$entity->addContent($mongodb_franchisetech, 'group_node:webform');
 
-	$redirect_url = $base_url . '/group-list';
-	$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
-	$response->send();
 }
 
-function mongodb_api_mail($key, &$message, $params) {
-	global $base_url;
-	
-	$options = array(
-		'langcode' => $message['langcode'],
-	);
- 
-	switch ($key) {
-		case 'newuser_otp':
-			$message['from'] = \Drupal::config('system.site')->get('mail');
-			$message['subject'] = $params['email_subject'];
-			$message['body'][] = "Congratulation! We have created an account for you.  Click below link to set your password " . $base_url . "/setpassword?token=" . $params['message'];
-			break;
-	}
-}
 ?>

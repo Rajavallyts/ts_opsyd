@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Contains mdbschema.module.
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function mdbschema_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the mdbschema module.
+    case 'help.page.mdbschema':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('used for saving the mdb collection, doc structure') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mdbschema_theme() {
+  return [
+    'mdbschema' => [
+      'render element' => 'children',
+    ],
+  ];
+}

@@ -1,0 +1,5 @@
+entity.mdb_schema.add_form:
+  route_name: entity.mdb_schema.add_form
+  title: 'Add Mdbschema'
+  appears_on:
+    - entity.mdb_schema.collection
