@@ -79,7 +79,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	
   public function listcollection() {
 		\Drupal::service('page_cache_kill_switch')->trigger();
-		$_SESSION['json_text'] = "";
+		$_SESSION['json_text'] = $prefix = "";
 		checkConnectionStatus();
 	  
 		global $base_url;
@@ -108,11 +108,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			} else {
 		        $output_html = 'No collection found!';			
 			}
+			$prefix = "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":500}' href='" . $base_url . "/mongodb_api/addCollection'>Add Collection</a><BR><BR>" . mongodb_parseJSON($server_output);				
 		}	
 		$tablerows = array ('#markup' => $output_html);
 			
 		$output_html = [
-			'#prefix'=> "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":500}' href='" . $base_url . "/mongodb_api/addCollection'>Add Collection</a><BR><BR>" . mongodb_parseJSON($server_output),		
+			'#prefix'=> $prefix,	
 			'#type' => 'table',
 			'#header' => [t('List of Collections')],			
 			'#rows' => [
@@ -423,7 +424,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 								}
 						
 							$header_title = (isset($webform_elements[$field]["#title"]) && !empty($webform_elements[$field]["#title"])) ? $webform_elements[$field]["#title"] : ucfirst($field);
-							if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1)
+							if($webform_elements[$field]["#type"] != "details" && isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] != 1)
 								$output_html .= "<th>" . $header_title . "</th>";
 						endforeach;
 						$output_html .= "<th>Action</th></tr></thead><tbody>";
@@ -433,7 +434,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							$colcount = 0;
 														
 							foreach ($webform_elements_keys as $field):
-								if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1){
+								if($webform_elements[$field]["#type"] != "details" && isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] != 1){
 									if(in_array($field, $relative_column)){											
 										$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
 									}else{
@@ -738,6 +739,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	global $base_url;
 	\Drupal::service('page_cache_kill_switch')->trigger();
 	checkConnectionStatus();
+	 $prefix = "";
 	
 	$collection_lists = array();
 	if ($_SESSION['mongodb_token'] != ""){					
@@ -796,20 +798,21 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		}else {
 			$table1 = t("No Collection Relationships found.");
 		}
+		$prefix = '<a href="'.$base_url.'/mongodb_api/collectionrelation/manage?add=coll">'.t("Add Collection Relationship").'</a>';
+	}else{
+		$table1 = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
+	}
+	
 		
 		$tablerows1 = array ('#markup' => $table1);
-		$output_html[] = [
-			'#prefix' => '<a href="'.$base_url.'/mongodb_api/collectionrelation/manage?add=coll">'.t("Add Collection Relationship").'</a>',
+	$output_html = [
+		'#prefix' => $prefix,
 		'#type' => 'table',
 		'#header' => [t('List of collection realationships')],			
 		'#rows' => [
 				[render($tablerows1)]
 		]
 	];
-
-	}else{
-		$output_html = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
-	}	
 
 	return $output_html;
   }

@@ -53,8 +53,8 @@ function callback_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_stat
   //$form_state->setRedirect('custom.page');
   global $base_url;
 	
-	if($triggered_element != "submit_connect"){
 		$triggered_element = $form_state->getTriggeringElement()["#name"];
+	if($triggered_element != "submit_connect"){
 		
 	// get group ids
 	$cur_group = $form_state->getValue('field_group_name')[0]['target_id'];

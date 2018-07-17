@@ -1003,7 +1003,7 @@ function addsublevel_submit($document_values){
 	return substr($updateWith,0, strlen($updateWith)-1);
 }
 
-function addsublevel($webform_elements, $json_result = array(), $form_state)
+function addsublevel($parentField, $webform_elements, $json_result = array(), $form_state)
 {
 	$j=0;
 	
