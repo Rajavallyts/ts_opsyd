@@ -242,3 +242,7 @@ ul.sf-menu.menu, ul.sf-menu.menu ul, ul.sf-menu.menu li {
 	padding: 0.1em 0.6em;
 	margin: 10px 0;
 }
+
+.location-warning{
+	color: #b10404;
+}

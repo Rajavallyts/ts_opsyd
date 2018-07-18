@@ -1,5 +1,5 @@
 <?php
-namespace Drupal\mongodb_api\addcollectionForm;
+namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -66,7 +66,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  
 		  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 		  if($showHideJson == "Yes")
-		  drupal_set_message($server_output);
+			drupal_set_message($server_output);
 		  
 		  $json_result = json_decode($server_output, true);
 		  if (isset($json_result['success'])) {
@@ -82,11 +82,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					$mdbschema->set('field_mongodb_collections',$oldlist.", ".$collection_name['collection_name']);
 					$mdbschema->save();
 				}				
-			  drupal_set_message ("Added collection successfully");
-			  $redirect_url = $base_url . '/mongodb_api/listcollection';
-			  $response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
-			  $response->send();
-		      return;
+				drupal_set_message ("Added collection successfully");
+				$redirect_url = $base_url . '/mongodb_api/listcollection';
+				$response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+				$response->send();
+				return;
 			}
 		  }	
 		}

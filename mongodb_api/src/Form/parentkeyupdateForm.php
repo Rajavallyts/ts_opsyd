@@ -117,6 +117,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		}
 		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 		if($showHideJson == "Yes")
-		drupal_set_message($server_output);
+			drupal_set_message($server_output);
 	}
 }

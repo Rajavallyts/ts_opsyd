@@ -1,5 +1,5 @@
 <?php
-namespace Drupal\mongodb_api\closeForm;
+namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -39,7 +39,7 @@ class closeconnectionForm extends FormBase {
 	  } else  {
 		$form['notice'] = [
 			'#markup' => "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>"
-	    ];
+		];
 	  }
 	
     return $form;
@@ -65,7 +65,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		$json_result = json_decode($server_output, true);		
 		if ($json_result['success'] == 1) {
 			$_SESSION['mongodb_token'] = "";
-			$_SESSION['mongodb_nid'] = "";
+			$_SESSION['mongodb_nid'] = "";			
 			$_SESSION["data_mongodb_collection"] = "";
 			$_SESSION["data_webform_id"] = "";
 			$_SESSION["data_document_id"] = "";

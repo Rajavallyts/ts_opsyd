@@ -131,7 +131,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 								$form['document'][$i]['valuee'] = array(
 								 '#type' => 'link',
 								 '#title' => "{" . count($resultValue) . " " . $fields_text. "}",
-     '#url' => \Drupal\Core\Url::fromRoute('mongodb_api.subdocument', ['mongodb_collection' => $_GET['mongodb_collection'], 'document_id' => $_GET['document_id'], 'editkey' => $resultkey]),
+								 '#url' => \Drupal\Core\Url::fromRoute('mongodb_api.subdocument', ['mongodb_collection' => $_GET['mongodb_collection'], 'document_id' => $_GET['document_id'], 'editkey' => $resultkey]),
 								 '#attributes' => ['class' => ['use-ajax'],'data-dialog-type' => 'modal','data-dialog-options' => \Drupal\Component\Serialization\Json::encode(['width' => 900])],	
 	 '#prefix' => "<div class='mongodb_subform_list'>",
 	 '#suffix' => '</div></div><br>',
@@ -291,7 +291,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		 $server_output = curl_exec ($ch);		
 		 drupal_set_message("Deleted fields successfully");
-		 curl_close ($ch);
+		 curl_close ($ch);   
 		   
 	   } else {
 	 
@@ -335,7 +335,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	  }	 
 	  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 	  if($showHideJson == "Yes")
-	  drupal_set_message($server_output);
+		drupal_set_message($server_output);
   }
 
 

@@ -1,5 +1,5 @@
 <?php
-namespace Drupal\mongodb_api\importdb;
+namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -61,7 +61,7 @@ class importdbForm extends FormBase {
 	/**
 	* {@inheritdoc}
 	*/
-  	public function submitForm(array &$form, FormStateInterface $form_state) {	    
+	public function submitForm(array &$form, FormStateInterface $form_state) {	    
 		$fid = $form_state->getValue(['csv_file', 0]);
 		$file = "";
 		$collection_name = $form_state->getValue("collection_name");
@@ -71,12 +71,12 @@ class importdbForm extends FormBase {
 			$file = File::load($fid);
 			$file->setPermanent();
 			$file->save();
-	
-			$uri = $file->getFileUri();
+
+			$uri = $file->getFileUri();		
 			$file_url = drupal_realpath($uri);
-	
+			
 			//$curl_file = new CurlFile(realpath($file_url));
-	
+			
 			if (function_exists('curl_file_create')) { // php 5.5+
 			  $curl_file = curl_file_create($file_url);
 			}
@@ -94,16 +94,16 @@ class importdbForm extends FormBase {
 				
 			curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
 			curl_setopt($ch, CURLOPT_HEADER, true);
-				curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 			curl_setopt($ch, CURLOPT_POST, 1);
-				curl_setopt($ch, CURLOPT_POSTFIELDS, $api_param);
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $api_param);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 			$server_output = curl_exec ($ch);	
 			curl_close ($ch);
 			
 			$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 			if($showHideJson == "Yes")
-			drupal_set_message($server_output);
+				drupal_set_message($server_output);			
 		}
 	}
 }

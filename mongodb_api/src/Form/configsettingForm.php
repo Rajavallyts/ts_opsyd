@@ -33,10 +33,10 @@ class configsettingForm extends ConfigFormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-	 $config = $this->config('mongodb_api.settings');
-    $config->set('endpointurl', $form_state->getValue('endpointurl'));
+	$config = $this->config('mongodb_api.settings');
+	$config->set('endpointurl', $form_state->getValue('endpointurl'));
 	$config->set('json_setting', $form_state->getValue('json_setting'));
-	 $config->save();
+	$config->save();
     parent::submitForm($form, $form_state);
   }
 

@@ -62,26 +62,18 @@ mongodb_api.listdocument:
 mongodb_api.assigndataform:    
     path: '/mongodb_api/assigndataform'
     defaults:
-        _form: '\Drupal\mongodb_api\assigndataForm\assigndataForm'
+        _form: '\Drupal\mongodb_api\Form\assigndataForm'
         _title: 'Assign Data Form'
     requirements:
         _permission: 'administer mongodb_api'
         
-mongodb_api.listdataformdocument:    
+mongodb_api.listdataformdocument:
     path: '/mongodb_api/listdataformdocument'
     defaults:
         _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::listdataformdocument'
         _title: 'Dataform'
     requirements:
-        _permission: 'administer mongodb_api'          
-        
-mongodb_api.listdataformdocument:    
-    path: '/mongodb_api/listdataformdocument'
-    defaults:
-        _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::listdataformdocument'
-        _title: 'MongoDB Dataforms'
-    requirements:
-        _permission: 'administer mongodb_api'        
+        _permission: 'administer mongodb_api'      
 
 mongodb_api.content:
   path: '/mongodb_api/managedocument'
@@ -111,14 +103,14 @@ mongodb_api.dataform:
   path: '/mongodb_api/managedataform'
   defaults:
     _form: '\Drupal\mongodb_api\Form\managedataform'
-    _title: 'Data Form'
+    # _title: 'Data Form'
   requirements:
     _permission: 'dataforms mongodb_api'   
     
 mongodb_api.subdocument:
   path: '/mongodb_api/managesubdocument'
   defaults:
-    _form: '\Drupal\mongodb_api\subForm\managesubdocumentForm'
+    _form: '\Drupal\mongodb_api\Form\managesubdocumentForm'
     _title: 'Mongo DB Sub Document'
   requirements:
     _permission: 'administer mongodb_api'       
@@ -126,7 +118,7 @@ mongodb_api.subdocument:
 mongodb_api.closeConnection:
   path: '/mongodb_api/closeConnection'
   defaults:
-    _form: '\Drupal\mongodb_api\closeForm\closeconnectionForm'
+    _form: '\Drupal\mongodb_api\Form\closeconnectionForm'
     _title: 'Close Connection'
   requirements:
     _permission: 'administer mongodb_api'  
@@ -134,7 +126,7 @@ mongodb_api.closeConnection:
 mongodb_api.addCollection:
   path: '/mongodb_api/addCollection'
   defaults:
-    _form: '\Drupal\mongodb_api\addcollectionForm\addcollectionForm'
+    _form: '\Drupal\mongodb_api\Form\addcollectionForm'
     _title: 'Add Collection'
   requirements:
     _permission: 'administer mongodb_api'
@@ -142,7 +134,7 @@ mongodb_api.addCollection:
 mongodb_api.addDocument:
   path: '/mongodb_api/addDocument'
   defaults:
-    _form: '\Drupal\mongodb_api\adddocumentForm\adddocumentForm'
+    _form: '\Drupal\mongodb_api\Form\adddocumentForm'
     _title: 'Add Document'
   requirements:
     _permission: 'administer mongodb_api'   
@@ -150,7 +142,7 @@ mongodb_api.addDocument:
 mongodb_api.addsubdocument:
   path: '/mongodb_api/addsubdocument'
   defaults:
-    _form: '\Drupal\mongodb_api\addsubdocument\addsubdocument'
+    _form: '\Drupal\mongodb_api\Form\addsubdocument'
     _title: 'Add Sub Document'
   requirements:
     _permission: 'administer mongodb_api'      
@@ -158,7 +150,7 @@ mongodb_api.addsubdocument:
 mongodb_api.addJSON:
   path: '/mongodb_api/addJSON'
   defaults:
-    _form: '\Drupal\mongodb_api\addJSONForm\addJSONForm'
+    _form: '\Drupal\mongodb_api\Form\addJSONForm'
     _title: 'Add JSON'
   requirements:
     _permission: 'administer mongodb_api'    
@@ -166,7 +158,7 @@ mongodb_api.addJSON:
 mongodb_api.search:
   path: '/mongodb_api/search'
   defaults:
-    _form: '\Drupal\mongodb_api\searchForm\searchForm'
+    _form: '\Drupal\mongodb_api\Form\searchForm'
     _title: 'Search MongoDB'
   requirements:
     _permission: 'administer mongodb_api'    
@@ -174,7 +166,7 @@ mongodb_api.search:
 mongodb_api.export:
   path: '/mongodb_api/export'
   defaults:
-    _form: '\Drupal\mongodb_api\exportdb\exportdbForm'
+    _form: '\Drupal\mongodb_api\Form\exportdbForm'
     _title: 'Export MongoDB'
   requirements:
     _permission: 'administer mongodb_api' 
@@ -182,7 +174,7 @@ mongodb_api.export:
 mongodb_api.import:
   path: '/mongodb_api/import'
   defaults:
-    _form: '\Drupal\mongodb_api\importdb\importdbForm'
+    _form: '\Drupal\mongodb_api\Form\importdbForm'
     _title: 'Import CSV'
   requirements:
     _permission: 'administer mongodb_api'
@@ -190,7 +182,7 @@ mongodb_api.import:
 mongodb_api.collectionsetting:
   path: '/mongodb_api/collectionsetting'
   defaults:
-    _form: '\Drupal\mongodb_api\collectionsetting\collectionsettingForm'
+    _form: '\Drupal\mongodb_api\Form\collectionsettingForm'
     _title: 'Collection settings'
   requirements:
     _permission: 'administer mongodb_api'
@@ -211,6 +203,14 @@ mongodb_api.collectionrelationmanage:
   requirements:
     _permission: 'administer mongodb_api'
 
+mongodb_api.collectionfieldrelationmanage:
+  path: '/mongodb_api/collectionfieldrelation/manage'
+  defaults:
+    _form: '\Drupal\mongodb_api\Form\collectionfieldrelationForm'
+    _title: 'Manage Collection Field Relations'
+  requirements:
+    _permission: 'administer mongodb_api'
+
 mongodb_api.collectionrelationdeleteconfirm:
   path: '/mongodb_api/collectionrelation/delete/confirm'
   defaults:
@@ -219,11 +219,27 @@ mongodb_api.collectionrelationdeleteconfirm:
   requirements:
     _permission: 'administer mongodb_api'
 
+mongodb_api.collectionfieldrelationdeleteconfirm:
+  path: '/mongodb_api/collectionfieldrelation/delete/confirm'
+  defaults:
+    _form: '\Drupal\mongodb_api\Form\collectionfieldrelationdeleteForm'
+    _title: 'Delete Collection Field Relation'
+  requirements:
+    _permission: 'administer mongodb_api'
+    
 mongodb_api.collectionrelationdelete:
   path: '/mongodb_api/collectionrelation/delete'
   defaults:
     _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::collectionrelationsdelete'
     _title: 'Delete Collection Relations'
+  requirements:
+    _permission: 'administer mongodb_api'
+
+mongodb_api.collectionfieldrelationdelete:
+  path: '/mongodb_api/collectionfieldrelation/delete'
+  defaults:
+    _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::collectionfieldrelationsdelete'
+    _title: 'Delete Collection Field Relation'
   requirements:
     _permission: 'administer mongodb_api'
 
@@ -239,7 +255,8 @@ mongodb_api.dataformsdocument:
    path: '/dataformsdocument'
    defaults:
       _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::dataformsdocument'
-      _title: 'Data Form Document'
+      # _title: 'Data Form Document'
+      _title: ''
    requirements:
       _permission: 'dataforms listing mongodb_api'
       
@@ -250,10 +267,18 @@ mongodb_api.addgroupuser:
       _title: 'Create a new user'
    requirements:
       _permission: 'administer mongodb_api'
+
+mongodb_api.addsubgroup:
+   path: '/addsubgroup'
+   defaults:
+      _form: '\Drupal\mongodb_api\Form\addsubgroupForm'
+      _title: 'Create a Subgroup'
+   requirements:
+      _permission: 'administer mongodb_api'
 mongodb_api.mdb_schema:
   path: /mongodb_api/mdb_schema
   defaults:
     _form: 'Drupal\mongodb_api\Form\mdbschemaForm'
     _title: 'Mongodb Schema'
   requirements:
-    _permission: 'administer mongodb_api'      
+    _permission: 'administer mongodb_api'

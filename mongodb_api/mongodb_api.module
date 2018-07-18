@@ -50,48 +50,48 @@ function mongodb_api_form_node_mongodb_information_form_alter(&$form, \Drupal\Co
 }
 
 function callback_submit(&$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-  //$form_state->setRedirect('custom.page');
-  global $base_url;
+	//$form_state->setRedirect('custom.page');
+	global $base_url;
 	
-		$triggered_element = $form_state->getTriggeringElement()["#name"];
+	$triggered_element = $form_state->getTriggeringElement()["#name"];
 	if($triggered_element != "submit_connect"){
 		
-	// get group ids
-	$cur_group = $form_state->getValue('field_group_name')[0]['target_id'];
-	$old_group = $form_state->getValue('old_group');
-	
-	// load node data
-	$current_nid = $form_state->getValue('nid');
-	$node_data = node_load($current_nid);
-	
-	// remove from existing
-	if(!empty($old_group) && $old_group != $cur_group){
+		// get group ids
+		$cur_group = $form_state->getValue('field_group_name')[0]['target_id'];
+		$old_group = $form_state->getValue('old_group');
+		
+		// load node data
+		$current_nid = $form_state->getValue('nid');
+		$node_data = node_load($current_nid);
+		
+		// remove from existing
+		if(!empty($old_group) && $old_group != $cur_group){
 
-		// remove existing
-		$group = \Drupal::entityTypeManager()->getStorage('group')->load($old_group);
-		foreach($group->getContent() as $key => $content){
-			if($content->getGroupContentType()->get('content_plugin') == 'group_node:mongodb_information'){
-				if($content->getEntity()->id() == $current_nid){
-					$content->delete();
+			// remove existing
+			$group = \Drupal::entityTypeManager()->getStorage('group')->load($old_group);
+			foreach($group->getContent() as $key => $content){
+				if($content->getGroupContentType()->get('content_plugin') == 'group_node:mongodb_information'){
+					if($content->getEntity()->id() == $current_nid){
+						$content->delete();
+					}
 				}
 			}
+			
+			// move to new group
+			$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+			$group->addContent($node_data, 'group_node:mongodb_information');
 		}
 		
-		// move to new group
-		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
-		$group->addContent($node_data, 'group_node:mongodb_information');
-	}
+		// add to group - first time
+		if(empty($old_group)){
+			$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
+			$group->addContent($node_data, 'group_node:mongodb_information');
+		}
 	
-	// add to group - first time
-	if(empty($old_group)){
-		$group = \Drupal::entityTypeManager()->getStorage('group')->load($cur_group);
-		$group->addContent($node_data, 'group_node:mongodb_information');
-	}
-	
-  $redirect_url = $base_url . '/mongodb-list';
-			$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
-			$response->send();
-			return;
+		$redirect_url = $base_url . '/mongodb-list';
+		$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+		$response->send();
+		return;
 	}
 }
 
@@ -104,9 +104,10 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 {
 	$current_user = \Drupal::currentUser();
 	$roles = $current_user->getRoles();
+	
 	if($form_id == "user_form"){
 		
-		// hide "request-rol"e field in user's page
+		/* // hide "request-rol"e field in user's page
 		if(in_array("datamanager",$roles)){
 			unset($form["field_request_role"]);
 		}
@@ -118,11 +119,11 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 				  $form['actions'][$action]['#submit'][] = 'custom_profile_submit';
 				}
 			}
-		}
+		} */
 	}
 
-	if($current_user->id() == 0){
-		if($form_id == "user_register_form"){
+	if($form_id == "user_register_form"){
+		/* if($current_user->id() == 0){
 			$form["request_role"] = array(
 				'#title' => t('Request Role'),
 				'#type' => 'select',
@@ -134,7 +135,7 @@ function mongodb_api_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $fo
 			);
 		
 			$form['actions']['submit']['#submit'][] = 'custom_user_register_submit';
-		}
+		} */
 	}
 }
 
@@ -241,6 +242,7 @@ function mongodb_api_form_node_mongodb_information_edit_form_alter(&$form, \Drup
 	$form['actions']['submit_connect'] = array
 	(
 		'#type' => 'submit',
+		'#name' => 'submit_connect',
 		'#value' => t('Save and Connect'),
 		'#submit' => $submit_action,
 		'#button_type' => 'primary',
@@ -330,10 +332,10 @@ function mongodb_submit_connect(&$form, &$form_state)
 	}
 	
 	if (mongodb_api_connect($form_state->getValue('nid'),$cur_group)) {
-			$redirect_url = $base_url . '/mongodb_api/listcollection';
-			$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
-			$response->send();
-			return;
+		$redirect_url = $base_url . '/mongodb_api/listcollection';
+		$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+		$response->send();
+		return;
 	}else{
 		$redirect_url = $base_url . '/mongodb-list';
 		$response = new Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
@@ -384,7 +386,7 @@ function mongodb_api_user_login(\Drupal\user\UserInterface $account) {
 		$current_request->query->set(
 		'destination','/'
 		);
-	}	
+	}
 }
 
 /*
@@ -406,7 +408,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		curl_close ($ch);
 		$_SESSION['mongodb_token'] = "";
 		$_SESSION['mongodb_nid'] = "";
-	  }
+	}
 }
 
 function mongodb_api_views_pre_render(\Drupal\views\ViewExecutable $view) {
@@ -424,7 +426,7 @@ function mongodb_api_views_pre_render(\Drupal\views\ViewExecutable $view) {
 	 }
      //$value->_entity->set('title', $value->_entity->get('title')->value . " " . "<img src='http://tools.opsyd.com/img/greenlight.jpg' width='30px' height='30px'>");
     }
-  }  
+  }
 }
 
 function mongodb_api_page_attachments(array &$attachments) {
@@ -432,25 +434,32 @@ function mongodb_api_page_attachments(array &$attachments) {
 		
 	global $base_url;
 	
-	$group_id = $output_html = '';
+	$group_ids = [];
+	$output_html = '';
 	$membership_loader = \Drupal::service('group.membership_loader');
 	if(!empty($membership_loader)){
 		foreach ($membership_loader->loadByUser(\Drupal::currentUser()) as $group_membership) {
-			$group_id = $group_membership->getGroup()->id();
+			$group_ids[] = $group_membership->getGroup()->id();
 		}
 	}
 	
 	$webform_ids = array();
-	if(!empty($group_id)){
-		$group = Drupal\group\Entity\Group::load($group_id);
-		foreach($group->getContent() as $key => $content){
-			if(strpos($content->getGroupContentType()->id(), 'group_node-webform') !== false){
-				$nodeDetails = $content->getEntity();
-				$webform_ids[]  = $nodeDetails->get("webform")->getValue()[0]["target_id"];
-			}
-		}
+	if(count($group_ids) > 0){
+		$group_type = \Drupal::config('isftech.settings')->get('isftech_conn_group_type');
+		foreach($group_ids as $group_id):
+			$group = Drupal\group\Entity\Group::load($group_id);
+			
+			if ($group->getGroupType()->id() != $group_type):
+				foreach($group->getContent() as $key => $content){
+					if(strpos($content->getGroupContentType()->id(), 'group_node-webform') !== false){
+						$nodeDetails = $content->getEntity();
+						$webform_ids[]  = $nodeDetails->get("webform")->getValue()[0]["target_id"];
+					}
+				}
+			endif;
+		endforeach;
 	}	
-	
+
 	if (count($webform_ids)) {				
 		foreach($webform_ids as $webform_id):
 			
@@ -481,7 +490,7 @@ function mongodb_api_page_attachments(array &$attachments) {
 			}
 			
 		endforeach;				
-	}	
+	}			
 	if ($output_html != "")
 	$attachments['#attached']['drupalSettings']['dataformlist'] = $output_html;
 }
@@ -716,11 +725,4 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		return 'missing';
 	}
 }
-
-function mongodb_api_group_insert(Drupal\Core\Entity\EntityInterface $entity) {
-	 $mongodb_connection = \Drupal::entityTypeManager()->getStorage("node")->load(44);
-	$entity->addContent($mongodb_connection, 'group_node:mongodb_information');
-
-}
-
 ?>

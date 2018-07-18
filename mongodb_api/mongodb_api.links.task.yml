@@ -28,85 +28,97 @@ mongodb_api.collectionrelationmanage:
   base_route: mongodb_api.listcollection
   weight: 50
   
+mongodb_api.collectionfieldrelationmanage:
+  route_name: mongodb_api.collectionfieldrelationmanage
+  title: Collection Field Relations (Add/Edit)
+  base_route: mongodb_api.listcollection
+  weight: 60
+  
 mongodb_api.dataformlist:
   route_name : mongodb_api.listdataform
   title: Data Form - Manager
   base_route: mongodb_api.listcollection
-  weight: 60
+  weight: 70
   
 mongodb_api.collectionformlist:
   route_name : mongodb_api.listcollectionform
   title: Data Form - List
   base_route: mongodb_api.listcollection
-  weight: 70
+  weight: 80
 
 mongodb_api.collectionsetting:
   route_name : mongodb_api.collectionsetting
   title: Data Form - Settings
   base_route: mongodb_api.listcollection
-  weight: 80
+  weight: 90
 
 mongodb_api.dataformdocumentlist:
   route_name : mongodb_api.listdataformdocument
   title: Data Form
   base_route: mongodb_api.listcollection
-  weight: 90
+  weight: 100
   
 mongodb_api.manageddataforminfo:
   route_name: mongodb_api.dataform
   title: Dataform Info.
   base_route: mongodb_api.listcollection
-  weight: 100    
+  weight: 110    
 
 mongodb_api.assigndataform:
   route_name : mongodb_api.assigndataform
   title: Assign Data Form
   base_route: mongodb_api.listcollection
-  weight: 110   
+  weight: 120   
   
 mongodb_api.addgroupuser:
   route_name : mongodb_api.addgroupuser
   title: Create User
   base_route: mongodb_api.listcollection
-  weight: 120  
+  weight: 130  
+
+mongodb_api.addsubgroup:
+  route_name : mongodb_api.addsubgroup
+  title: Create Subgroup
+  base_route: mongodb_api.listcollection
+  weight: 140  
   
 mongodb_api.searchmongodb:
   route_name: mongodb_api.search
   title: Search
   base_route: mongodb_api.listcollection
-  weight: 130
+  weight: 150
   
 mongodb_api.exportmongodb:
   route_name: mongodb_api.export
   title: Export
   base_route: mongodb_api.listcollection
-  weight: 140
+  weight: 160
   
 mongodb_api.importmongodb:
   route_name: mongodb_api.import
   title: Import
   base_route: mongodb_api.listcollection
-  weight: 150
+  weight: 170
   
 mongodb_api.closemdbconnection:
   route_name: mongodb_api.closeConnection
   title: Close
   base_route: mongodb_api.listcollection
-  weight: 160
+  weight: 180
 
-mongodb_api.dataformslist:
-  route_name: mongodb_api.dataformslist
-  title: Data Form List
-  base_route: mongodb_api.dataformslist
-  weight: 170
+# mongodb_api.dataformslist:
+  # route_name: mongodb_api.dataformslist
+  # title: Data Form List
+  # base_route: mongodb_api.dataformslist
+  # weight: 190
 
 mongodb_api.dataformsdocument:
   route_name: mongodb_api.dataformsdocument
   title: Data Form Documents
   base_route: mongodb_api.dataformslist
-  weight: 180
+  weight: 200
 mongodb_api.mdb_schema:
   route_name: mongodb_api.mdb_schema
   title: Mongodb Schema
   base_route: mongodb_api.listcollection
-  weight: 190
+  weight: 210

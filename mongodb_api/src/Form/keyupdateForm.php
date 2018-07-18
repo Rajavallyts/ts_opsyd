@@ -126,7 +126,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$doc_key = $document_value['key'];
 				if(isset($document_value['document']) && count($document_value['document']) > 0){
 					$updateWith .= add_sublevel_submit($doc_key,$document_value['document']);
-				}else{
+				}else{					
 					if (isset($document_value['valuee']) && $document_value['valuee'] != "") {
 						$updateWith .= '"' . $doc_key . '":"' . $document_value['valuee'] . '",';
 					}

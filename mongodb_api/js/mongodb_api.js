@@ -41,46 +41,46 @@ Drupal.behaviors.mongodb_api = {
 		});
 	}
 	
-		$(".formfieldformat").change(function() {
+	$(".formfieldformat").change(function() {
 		$(this).siblings('.unique_check').find("input").prop('checked',false);
 		$(this).siblings('.multiple_check').find("input").prop('checked',false);
 		
 		$(this).siblings(".multiple_check").css("display","none");
 		$(this).siblings(".unique_check").css("display","none");
 		$(this).siblings(".dropdown_values").css("display","none");
-				$(this).siblings(".formvalidation").css("display","none");
-				if($(this).val() == "textfield"){
-					$(this).siblings(".formvalidation").css("display","block");
-			$(this).siblings(".multiple_check").css("display","block");
-					$(this).siblings(".unique_check").css("display","block");
-		}else if($(this).val() == "select"){
-			$(this).siblings(".multiple_check").css("display","block");
-			$(this).siblings(".dropdown_values").css("display","block");
-		}else if($(this).val() == "radios"){
-			$(this).siblings(".dropdown_values").css("display","block");
-		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
-			$(this).siblings(".multiple_check").css("display","block");
-			}
-		});
-		$(".dropdown_values").css("display","none");
-		$(".multiple_check").css("display","none");
-		$(".formvalidation").css("display","none");
-		$(".unique_check").css("display","none");
-		$(".formfieldformat").each( function() {			
+		$(this).siblings(".formvalidation").css("display","none");
 		if($(this).val() == "textfield"){
 			$(this).siblings(".formvalidation").css("display","block");
-				$(this).siblings(".multiple_check").css("display","block");
-				$(this).siblings(".unique_check").css("display","block");
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".unique_check").css("display","block");
 		}else if($(this).val() == "select"){
 			$(this).siblings(".multiple_check").css("display","block");
 			$(this).siblings(".dropdown_values").css("display","block");
 		}else if($(this).val() == "radios"){
 			$(this).siblings(".dropdown_values").css("display","block");
 		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
-				$(this).siblings(".multiple_check").css("display","block");
-			}
-		});
-	
+			$(this).siblings(".multiple_check").css("display","block");
+		}
+	});
+	$(".dropdown_values").css("display","none");
+	$(".multiple_check").css("display","none");
+	$(".formvalidation").css("display","none");
+	$(".unique_check").css("display","none");
+	$(".formfieldformat").each( function() {
+		if($(this).val() == "textfield"){
+			$(this).siblings(".formvalidation").css("display","block");
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".unique_check").css("display","block");
+		}else if($(this).val() == "select"){
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "radios"){
+			$(this).siblings(".dropdown_values").css("display","block");
+		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+			$(this).siblings(".multiple_check").css("display","block");
+		}
+	});
+
 	$(".multiple_attr_field").click(function(){
 		if($(this).is(":checked")){
 			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',true);
@@ -145,7 +145,8 @@ Drupal.behaviors.mongodb_api = {
 				$("#copyToClipboard").html("Copy JSON");
 			},500);
 		});
-		$('#dataform_list').DataTable({
+		
+		$('#dataform_list, .mongo-data-table .views-table').DataTable({
 			//"scrollX": true
 		});
 		$('#datadocument_list').DataTable({
@@ -155,6 +156,11 @@ Drupal.behaviors.mongodb_api = {
 			e.preventDefault();
 			window.open($(this).attr("href"), '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
 		});
+		
+		if($(".mongo-data-table .views-table").length){
+			$(".mongo-data-table .views-table").addClass("display nowrap");
+			$(".mongo-data-table .views-table").css("width:100%");
+		}
 		
 		$("input[name$='[select_all]']").click(function(){
 			curLevel = $(this).attr("data-attr").split("###");

@@ -7,6 +7,8 @@ use Drupal\mdbschema\Entity\MDBSchema;
 use Drupal\dataform\Entity\DataForm;
 use Drupal\webform\Entity\Webform;
 use Drupal\url_redirect\Entity\UrlRedirect;
+use Drupal\collection_relations\Entity\CollectionRelations;
+use Drupal\collection_field_relation\Entity\CollectionFieldRelation;
 
 class mdbschemaForm extends FormBase {
   /**
@@ -70,15 +72,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			
 			$form['old_collection_array'] = [
 				'#type' => 'hidden',
-				'#value' => $old_list,		
+				'#value' => $old_list,
 			];
 			$form['current_collection_array'] = [
 				'#type' => 'hidden',
-				'#value' => $latest_list,		
+				'#value' => $latest_list,
 			];
 			$form['current_setup_collection'] = [
 				'#type' => 'hidden',
-				'#value' => implode(", ", $latest_list),		
+				'#value' => implode(", ", $latest_list),
 			];
 			$form['mdb_schema_id'] = [
 				'#type' => 'hidden',
@@ -88,12 +90,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			if (implode(", ", $old_list) == implode(", ", $latest_list)) {
 				$form['conclusion'] = [
 					'#type' => 'markup',
-					'#markup' => "<BR><BR>No updates found in Mongodb",
+					'#markup' => "<BR><BR>No updates found in Mongodb.",
 				];
 			} else {
 				$form['conclusion'] = [
 					'#type' => 'markup',
-					'#markup' => "<BR><BR>Updates found in Mongodb.  Confirm your latest changes by clicking Save Schema.<BR><b>Note: All drupal setting related to missing collection will be deleted permanently.</b>",
+					'#markup' => "<BR><BR>Updates found in Mongodb. Confirm your latest changes by clicking Save Schema.<BR><b>Note: All drupal setting related to missing collection will be deleted permanently.</b>",
 				];
 				$form['actions']['#type'] = 'actions';
 				$form['actions']['submit'] = array(
@@ -105,7 +107,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$form['actions']['cancel'] = array (
 					'#name' => 'cancel_button',
 					'#type' => 'submit',
-					'#value' => $this->t('No need. I will check Mongodb.'),
+					'#value' => $this->t('No need. I will in check Mongodb.'),
 				);
 			}
 		}else{
@@ -133,7 +135,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	}else {
 		$form['description'] = [
 			'#type' => 'markup',
-			'#markup' => 'No connection established to mongodb.  Please <a href="' . $base_url . '/mongodb-list" target="_self">Connect</a>',
+			'#markup' => 'No connection established to mongodb. Please <a href="' . $base_url . '/mongodb-list" target="_self">Connect</a>',
 		];
 	}
 	
@@ -156,6 +158,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$cur_collection_array = $form_values["current_collection_array"];
 			$old_collection_array = $form_values["old_collection_array"];
 			$coll_diff = array_diff($old_collection_array, $cur_collection_array);
+			
+			$coll_diff = array('Product');
 			
 			if(!empty($coll_diff)){
 				$query = \Drupal::entityQuery('dataform')
@@ -204,6 +208,38 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							
 							// delete dataform
 							$dataform->delete();
+						}
+					}
+				}
+				
+				// delete collection relation
+				$query = \Drupal::entityQuery('collection_relations')
+						->condition('status', 1)
+						->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'])
+						->condition('field_relative_collection', $coll_diff, 'IN');
+				$coll_ids = $query->execute();
+				
+				if(!empty($coll_ids)){
+					foreach($coll_ids as $coll_id){
+						$coll_relation = CollectionRelations::load($coll_id);
+						if(!empty($coll_relation)){
+							$coll_relation->delete();
+						}
+					}
+				}
+				
+				// delete collection field relation
+				$query = \Drupal::entityQuery('collection_field_relation')
+						->condition('status', 1)
+						->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'])
+						->condition('field_collection_name', $coll_diff, 'IN');
+				$coll_field_ids = $query->execute();
+				
+				if(!empty($coll_field_ids)){
+					foreach($coll_field_ids as $coll_field_id){
+						$coll_field_relation = CollectionFieldRelation::load($coll_field_id);
+						if(!empty($coll_field_relation)){
+							$coll_field_relation->delete();
 						}
 					}
 				}

@@ -1,5 +1,5 @@
 <?php
-namespace Drupal\mongodb_api\searchForm;
+namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -43,7 +43,7 @@ class searchForm extends FormBase {
 	  } else {
 		$form['notice'] = [
 			'#markup' => "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>"
-		  ];		  
+		];		  
 	  }
     return $form;
   }
