@@ -1,5 +1,6 @@
 (function ($, Drupal, drupalSettings) {
 	var menuadded = "no";	
+	var closeset = "no";
 Drupal.behaviors.mongodb_api = {
   attach: function (context, settings) {
     
@@ -12,24 +13,14 @@ Drupal.behaviors.mongodb_api = {
 			$("#block-mainnavigation ul > li.sf-depth-1:last-child").append(newmenu);
 			menuadded = "yes";
 		}
-		$("#apiheader").click(function () {
-			$header = $(this);    
-			$content = $header.next();
-
-			$content.slideToggle(500, function () {
-				$header.text(function () {
-					return $content.is(":visible") ? "  Collapse JSON" : "  Expand JSON";
-				});
+		
+		if (closeset == "no" && $('.messages').length > 0) {
+			$('.messages').prepend("<div class='close-button'></div>");
+			$('.messages .close-button').click(function() {
+				$(this).parent().fadeOut(300);
 			});
-
-			$("#copyToClipboard").click(function () { 
-				var $temp = $("<input>");
-				$("body").append($temp);  
-				$temp.val($('.testcontent .json_container').text()).select();
-				document.execCommand("copy");
-				$temp.remove();
-			});
-		});
+			closeset = "yes";
+		}
 	});
 	
 	/* $(".node-mongodb-information-form input, .node-mongodb-information-form select,.node-mongodb-information-edit-form input, .node-mongodb-information-edit-form select").each(function(){
@@ -59,46 +50,54 @@ Drupal.behaviors.mongodb_api = {
 		});
 	}
 	
-		$(".formfieldformat").change(function() {
+	$(".formfieldformat").change(function() {
 		$(this).siblings('.unique_check').find("input").prop('checked',false);
 		$(this).siblings('.multiple_check').find("input").prop('checked',false);
 		
 		$(this).siblings(".multiple_check").css("display","none");
 		$(this).siblings(".unique_check").css("display","none");
 		$(this).siblings(".dropdown_values").css("display","none");
-				$(this).siblings(".formvalidation").css("display","none");
-				if($(this).val() == "textfield"){
-					$(this).siblings(".formvalidation").css("display","block");
-			$(this).siblings(".multiple_check").css("display","block");
-					$(this).siblings(".unique_check").css("display","block");
-		}else if($(this).val() == "select"){
-			$(this).siblings(".multiple_check").css("display","block");
-			$(this).siblings(".dropdown_values").css("display","block");
-		}else if($(this).val() == "radios"){
-				$(this).siblings(".dropdown_values").css("display","block");
-		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
-				$(this).siblings(".multiple_check").css("display","block");
-			}
-		});
-		$(".dropdown_values").css("display","none");
-		$(".multiple_check").css("display","none");
-		$(".formvalidation").css("display","none");
-		$(".unique_check").css("display","none");
-		$(".formfieldformat").each( function() {			
+		$(this).siblings(".dropdown_sort").css("display","none");
+		$(this).siblings(".formvalidation").css("display","none");
 		if($(this).val() == "textfield"){
 			$(this).siblings(".formvalidation").css("display","block");
-				$(this).siblings(".multiple_check").css("display","block");
-				$(this).siblings(".unique_check").css("display","block");
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".unique_check").css("display","block");
 		}else if($(this).val() == "select"){
 			$(this).siblings(".multiple_check").css("display","block");
 			$(this).siblings(".dropdown_values").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
 		}else if($(this).val() == "radios"){
-				$(this).siblings(".dropdown_values").css("display","block");
+			$(this).siblings(".dropdown_values").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
 		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
-				$(this).siblings(".multiple_check").css("display","block");
-			}
-		});
-	
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
+		}
+	});
+	$(".dropdown_values").css("display","none");
+	$(".dropdown_sort").css("display","none");
+	$(".multiple_check").css("display","none");
+	$(".formvalidation").css("display","none");
+	$(".unique_check").css("display","none");
+	$(".formfieldformat").each( function() {
+		if($(this).val() == "textfield"){
+			$(this).siblings(".formvalidation").css("display","block");
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".unique_check").css("display","block");
+		}else if($(this).val() == "select"){
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_values").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
+		}else if($(this).val() == "radios"){
+			$(this).siblings(".dropdown_values").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
+		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+			$(this).siblings(".multiple_check").css("display","block");
+			$(this).siblings(".dropdown_sort").css("display","block");
+		}
+	});
+
 	$(".multiple_attr_field").click(function(){
 		if($(this).is(":checked")){
 			$(this).parents('.multiple_check').next(".unique_check").find("input").attr('disabled',true);
@@ -139,26 +138,102 @@ Drupal.behaviors.mongodb_api = {
 };
 })(jQuery, Drupal, drupalSettings);
 
-(function ($, Drupal) {
+(function ($, Drupal) {	
 	$(document).ready(function () {
-		$('#dataform_list').DataTable({
+		$("#apiheader").click(function () {
+			$header = $(this);    
+			$content = $header.next();
+
+			$content.slideToggle('medium', function () {
+				$header.text(function () {
+					return $content.is(":visible") ? "  Collapse JSON" : "  Expand JSON";
+				});
+			});
+
+		});
+		$("#copyToClipboard").click(function () { 
+			var $temp = $("<input>");
+			$("body").append($temp);  
+			$temp.val($('.testcontent .json_container').text()).select();
+			document.execCommand("copy");
+			$temp.remove();
+			$(this).html("Copied");
+			setTimeout(function(){
+				$("#copyToClipboard").html("Copy JSON");
+			},500);
+		});
+		
+		var table = $('#dataform_list, .mongo-data-table .views-table').DataTable({
+			aLengthMenu: [
+				[10, 25, 50, 100, 200, -1],
+				[10, 25, 50, 100, 200, "All"]
+			],
+			"ordering": false
 			//"scrollX": true
 		});
+		
+		// Begin - Custom filter
+		if($("#add_link").length){
+			$('<div class="location-filter"><label for="locations_filter">Locations: </label><select name="locations_filter" id="locations_filter"><option value="">All</option><option value="Yes">Corporate</option><option value="No">Franchise</option></select></div>').insertAfter("#add_link");
+			$(document).on("change", "#locations_filter", function(e){
+				table.draw();
+			} );
+			
+			$.fn.dataTable.ext.search.push(
+				function( settings, data, dataIndex ) {
+					var location_val = $("#locations_filter").val();	
+					if(location_val != ''){
+						var i = 0;
+						var condColum = '';
+						$(".dataTable thead th").each(function(){
+							if($(this).html() == "Corporate")
+								condColum = i;
+							i++;
+						});
+						if (condColum != '' && data[condColum] == location_val){
+							return true;
+						}
+					}else{
+						return true;
+					}
+					return false;
+				}
+			);
+		}
+		// End - Custom filter
+		
 		$('#datadocument_list').DataTable({
-			"ordering": false
+			"ordering": false,
+			aLengthMenu: [
+				[10, 25, 50, 100, 200, -1],
+				[10, 25, 50, 100, 200, "All"]
+			],
 		});
+		
 		$(document).on("click", ".image-link", function(e){
 			e.preventDefault();
 			window.open($(this).attr("href"), '_blank', 'location=yes,height=570,width=520,scrollbars=yes,status=yes');
 		});
 		
+		if($(".mongo-data-table .views-table").length){
+			$(".mongo-data-table .views-table").addClass("display nowrap");
+			$(".mongo-data-table .views-table").css("width:100%");
+		}
+		
 		$("input[name$='[select_all]']").click(function(){
-			curLevel = $(this).attr("data-attr").split("-");
+			curLevel = $(this).attr("data-attr").split("###");
 
 			if($(this).is(":checked"))
-				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",true);
+				$('input[data-attr="'+curLevel[1]+'"]').prop("checked",true);
 			else
-				$('input[data-attr="'+curLevel[1]+'"]').attr("checked",false);
+				$('input[data-attr="'+curLevel[1]+'"]').prop("checked",false);
 		});
+		
+		
+		/* document.getElementById('edit-email').addEventListener('invalid', function () {
+		  if (this.value.trim() !== '') {
+			this.setCustomValidity("'" + this.value + "' is not a valid email bro!");
+		  }
+		}, false); */
 	});
 })(jQuery, Drupal);

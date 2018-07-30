@@ -6,6 +6,5 @@ mongodb_api.customjs:
   js:
     js/mongodb_api.js: {}
     js/datatable/datatables.min.js: {}
-  dependencies:
-    - core/jquery
-    - core/drupalSettings
+  # dependencies:
+    # - core/jquery

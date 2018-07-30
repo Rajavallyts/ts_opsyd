@@ -32,7 +32,7 @@ class managedocumentForm extends FormBase {
 			$document_id = $_SESSION["doc_document_id"];
 		}
 	}
-	if ($_SESSION['mongodb_token'] != ""){
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){
 	  if (!empty($mongodb_collection) && !empty($document_id)) {
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/".$mongodb_collection."/findByID";		  
 		  $api_param = array ( "token" => $_SESSION['mongodb_token'], "id" => $document_id);
@@ -52,12 +52,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	  
 	  $form['api_result'] = array (
 		'#type' => 'markup',
-		'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$mongodb_collection. "' target='_self'>".$mongodb_collection."</a> >".$document_id."</b><br><br>".mongodb_parseJSON($server_output)."<BR><BR>ObjectId - <b>".$document_id."</b><BR><a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url. "/mongodb_api/addsubdocument?mongodb_collection=".$mongodb_collection."&document_id=".$document_id."'>Add Sub Document</a>&nbsp;&nbsp;&nbsp;<a class='' data-dialog-type='modal' data-dialog-options='{\"width\":900}'  href='".$base_url."/mongodb_api/keyupdate?mongodb_collection=".$mongodb_collection."&document_id=".$document_id."'>Update Keys</a>",
+		'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$mongodb_collection. "' target='_self'>".$mongodb_collection."</a> >".$document_id."</b><br><br>".mongodb_parseJSON($server_output)."<BR><BR>ObjectId - <b>".$document_id."</b><BR><a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url. "/mongodb_api/addsubdocument?mongodb_collection=".$mongodb_collection."&document_id=".$document_id."'>Add Sub Document</a>&nbsp;&nbsp;&nbsp;<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url."/mongodb_api/keyupdate?mongodb_collection=".$mongodb_collection."&document_id=".$document_id."'>Update Keys</a>",
 	 );
 	 
       $form['#tree'] = TRUE;
-	  $form['#attached']['library'][] = 'mongodb_api.customcss';
-     
 
 	  $json_result = json_decode($server_output, true);	
 	  $initial_state = 0;
@@ -131,7 +129,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 								$form['document'][$i]['valuee'] = array(
 								 '#type' => 'link',
 								 '#title' => "{" . count($resultValue) . " " . $fields_text. "}",
-     '#url' => \Drupal\Core\Url::fromRoute('mongodb_api.subdocument', ['mongodb_collection' => $_GET['mongodb_collection'], 'document_id' => $_GET['document_id'], 'editkey' => $resultkey]),
+								 '#url' => \Drupal\Core\Url::fromRoute('mongodb_api.subdocument', ['mongodb_collection' => $_GET['mongodb_collection'], 'document_id' => $_GET['document_id'], 'editkey' => $resultkey]),
 								 '#attributes' => ['class' => ['use-ajax'],'data-dialog-type' => 'modal','data-dialog-options' => \Drupal\Component\Serialization\Json::encode(['width' => 900])],	
 	 '#prefix' => "<div class='mongodb_subform_list'>",
 	 '#suffix' => '</div></div><br>',
@@ -202,44 +200,44 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	
 			$i++;
 		}				
-	
-	$form['document']['actions']['delete_kv'] = [
-		'#type' => 'submit',
-		'#value' => 'Delete selected',		 
-		'#prefix' => '<div class="clearboth">',
-		'#suffix' => '</div>',
-		'#name' => 'delete_kv',
-	];
+			
+			$form['document']['actions']['delete_kv'] = [
+				'#type' => 'submit',
+				'#value' => 'Delete selected',		 
+				'#prefix' => '<div class="clearboth">',
+				'#suffix' => '</div>',
+				'#name' => 'delete_kv',
+			];
 
-	$form['document_new']['actions']['add_name'] = [
-		'#type' => 'submit',
-        '#value' => t('Add one more'),
-        '#submit' => array('::addOne'),
-        '#ajax' => [
-          'callback' => '::addmoreCallback',
-          'wrapper' => "names-fieldset-wrapper",		
-		],		
-		'#prefix' => '<div class="clearboth">',       
-    ];
-    if ($form_state->get('num_document') > 1) {
-        $form['document_new']['actions']['remove_name'] = [
-          '#type' => 'submit',		 
-          '#value' => t('Remove one'),
-          '#submit' => array('::removeCallback'),
-          '#ajax' => [
-            'callback' => '::addmoreCallback',
-            'wrapper' => "names-fieldset-wrapper",
-          ],		  
-		  '#suffix' => '</div><br>',
-        ];
-	}
-	$form_state->setCached(FALSE);
+			$form['document_new']['actions']['add_name'] = [
+				'#type' => 'submit',
+				'#value' => t('Add one more'),
+				'#submit' => array('::addOne'),
+				'#ajax' => [
+				  'callback' => '::addmoreCallback',
+				  'wrapper' => "names-fieldset-wrapper",		
+				],		
+				'#prefix' => '<div class="clearboth">',       
+			];
+			if ($form_state->get('num_document') > 1) {
+				$form['document_new']['actions']['remove_name'] = [
+				  '#type' => 'submit',		 
+				  '#value' => t('Remove one'),
+				  '#submit' => array('::removeCallback'),
+				  '#ajax' => [
+					'callback' => '::addmoreCallback',
+					'wrapper' => "names-fieldset-wrapper",
+				  ],		  
+				  '#suffix' => '</div><br>',
+				];
+			}
+			$form_state->setCached(FALSE);
 
-	$form['submit'] = [
-      '#type' => 'submit',
-      '#value' => t('Save Changes'),
-	  '#name' => 'save_changes',
-    ];
+			$form['submit'] = [
+			  '#type' => 'submit',
+			  '#value' => t('Save Changes'),
+			  '#name' => 'save_changes',
+			];
 	
 		}
 		
@@ -273,7 +271,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		 $fields = "{";
 		 foreach($document_values as $document_value)
 		 {
-			 if ($document_value['remove_key'] == 1) {
+			 if (isset($document_value['remove_key']) && $document_value['remove_key'] == 1) {
 				 $fields .= '"' . $document_value['key'] . '":"",';
 			 }
 		 }
@@ -291,7 +289,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		 $server_output = curl_exec ($ch);		
 		 drupal_set_message("Deleted fields successfully");
-		 curl_close ($ch);
+		 curl_close ($ch);   
 		   
 	   } else {
 	 
@@ -333,7 +331,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		  drupal_set_message("Updated changes successfully");
 		  curl_close ($ch);
 	  }	 
-	  drupal_set_message($server_output);
+	  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+	  if($showHideJson == "Yes")
+		drupal_set_message($server_output);
   }
 
 

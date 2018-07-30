@@ -3,32 +3,42 @@ namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use \Drupal\node\Entity\Node;
+use \Drupal\file\Entity\File;
+use Drupal\mdbschema\Entity\MDBSchema;
 
-class addCollectionForm extends FormBase {
+class addcollectionForm extends FormBase {
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'addCollectionForm';
+    return 'manage_document';
   }
   
   /**
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-
-	$form['collection_name'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Collection Name:'),
-      '#required' => TRUE,
-    );   
-
-    $form['actions']['#type'] = 'actions';
-    $form['actions']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => $this->t('Connect'),
-      '#button_type' => 'primary',
-    );
+	  global $base_url;	  
+	  $server_output = "";
+	  checkConnectionStatus();
+	  
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
+		$form['collection_name'] = [
+		  '#type' => 'textfield',
+		  '#required' => TRUE,
+		  '#title' => $this->t('Collection Name'),
+		];
+		$form['submit'] = [
+		  '#type' => 'submit',
+		  '#value' => t('Add Collection'),
+		];
+	  } else {
+		 $form['description'] = [
+			'#type' => 'markup',
+			'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+		 ];
+	  }
     return $form;
   }
   
@@ -36,50 +46,50 @@ class addCollectionForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, FormStateInterface $form_state) {	
-    $api_param = array (
-		'host' => $form['database_ip']['#value'],
-		'dbName' => $form['database_name']['#value']
-	);
-	
-$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/connect";
-	
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$server_output = curl_exec ($ch);		
-	$json_result = json_decode($server_output, true);
-	curl_close ($ch);
-	if ($json_result['success'] == 1) {
-		$_SESSION['mongodb_token'] = $json_result['token'];
-		drupal_set_message (t('Success - Mongo DB connection establised.'));
-		//drupal_goto('mongodb_api/collections');
-		$form_state->setRedirect('mongodb_api.listcollection');
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+	     $updateWith = "{";
+		 $collection_name = $form_state->getValues("collection_name");		 
+		 global $base_url;
+		 
+		 if (isset($collection_name)) {
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/createCollection";		  
+		  $api_param = array ( 		    
+			"token" => $_SESSION['mongodb_token'], 
+			"collectionName" => $collection_name['collection_name']);
+									 
+		  $ch = curl_init();
+		  curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+		  curl_setopt($ch, CURLOPT_POST, 1);
+		  curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+		  curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		  $server_output = curl_exec ($ch);		
+		  curl_close ($ch);
+		  
+		  $showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		  if($showHideJson == "Yes")
+			drupal_set_message($server_output);
+		  
+		  $json_result = json_decode($server_output, true);
+		  if (isset($json_result['success'])) {
+			if ($json_result['success'] == 1) {
+				$query = \Drupal::entityQuery('mdb_schema')
+							->condition('status', 1)
+							->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=');
+				$mdbschemas = $query->execute();
+				if(count($mdbschemas) > 0){
+					$mdbschema = MDBSchema::load(array_keys($mdbschemas)[0]);			
+					$oldlist = $mdbschema->field_mongodb_collections->value;
+					
+					$mdbschema->set('field_mongodb_collections',$oldlist.", ".$collection_name['collection_name']);
+					$mdbschema->save();
+				}				
+				drupal_set_message ("Added collection successfully");
+				$redirect_url = $base_url . '/mongodb_api/listcollection';
+				$response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+				$response->send();
+				return;
+			}
+		  }	
+		}
 	}
-	else
-		drupal_set_message(t("Invalid Database information.  No connection establised to Mongo DB."), "error");
-	
-	
-	
-	
-	
-/*	$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections";
-	$api_param = array ( "token" => "56045c0a4e66e7ca");
-	//$api_param = array ( "token" => $token);
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$server_output = curl_exec ($ch);	
-	$json_result = json_decode($server_output);
-	//$form_state['values']['collections_list'] = array ( "#markup" => "testtttt");
-	for($jcount = 0; $jcount < count($json_result); $jcount++)
-	drupal_set_message($json_result[$jcount]->name);
-	//$form_state->setRebuild();*/
-	}
-
-
 }

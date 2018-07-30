@@ -1,0 +1,19 @@
+add collection field relation entities:
+  title: 'Create new Collection field relation entities'
+
+administer collection field relation entities:
+  title: 'Administer Collection field relation entities'
+  description: 'Allow to access the administration form to configure Collection field relation entities.'
+  restrict access: true
+
+delete collection field relation entities:
+  title: 'Delete Collection field relation entities'
+
+edit collection field relation entities:
+  title: 'Edit Collection field relation entities'
+
+view published collection field relation entities:
+  title: 'View published Collection field relation entities'
+
+view unpublished collection field relation entities:
+  title: 'View unpublished Collection field relation entities'

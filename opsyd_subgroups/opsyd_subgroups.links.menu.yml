@@ -4,11 +4,12 @@ entity.opsyd_subgroups.collection:
   title: 'Opsyd subgroups list'
   route_name: entity.opsyd_subgroups.collection
   description: 'List Opsyd subgroups entities'
-  parent: system.admin_structure
-  weight: 100
+  parent: mongodb_api.welcome
+  weight: 83
 
 opsyd_subgroups.admin.structure.settings:
   title: 'Opsyd subgroups settings'
   description: 'Configure Opsyd subgroups entities'
   route_name: opsyd_subgroups.settings
-  parent: system.admin_structure
+  parent: mongodb_api.welcome
+  weight: 84
