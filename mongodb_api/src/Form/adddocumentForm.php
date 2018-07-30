@@ -20,25 +20,28 @@ class adddocumentForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {	  
-      $form['#tree'] = TRUE;
-	  $form['#prefix'] = "<div id='adddocument_wrapper'>";
-	  $form['#suffix'] = "</div>";
-      $form['document'] = [
-       '#type' => 'fieldset',     
-       '#prefix' => "<div id='names-fieldset-wrapper'>",
-       '#suffix' => '</div>',
-      ];
-	  $form['validator'] = array(
-		'#type' => 'hidden',
-		'#name' => 'validator');
-		
+  public function buildForm(array $form, FormStateInterface $form_state) {	
+	global $base_url;
+	checkConnectionStatus();
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
+		$form['#tree'] = TRUE;
+		$form['#prefix'] = "<div id='adddocument_wrapper'>";
+		$form['#suffix'] = "</div>";
+		$form['document'] = [
+			'#type' => 'fieldset',     
+			'#prefix' => "<div id='names-fieldset-wrapper'>",
+			'#suffix' => '</div>',
+		];
+		$form['validator'] = array(
+			'#type' => 'hidden',
+			'#name' => 'validator'
+		);
 
-	   $new_field = $form_state->get('num_document');
-	   if (empty($new_field)) {
-		   $new_field = $form_state->set('num_document', 1);
-	   }
-		for($i = 0; $i < $new_field; $i++){
+		$num_docs = $form_state->get('num_document');
+		if (empty($num_docs)) {
+		   $document_field = $form_state->set('num_document', 1);
+		}
+		for($i = 0; $i < $num_docs; $i++){
 			$form['document'][$i]['key'] = array(
 				'#type' => 'textfield',      
 				'#required' => FALSE,	  	  
@@ -60,51 +63,46 @@ class adddocumentForm extends FormBase {
 				'#required' => $i == 0 ? TRUE : FALSE,
 			);	
 		}				
-	
-	$form['document']['actions'] = [
-		'#type' => 'actions',
-		'#class' => 'clearboth',
-	];
 
-	$form['document']['actions']['add_name'] = [
-		'#type' => 'submit',
-        '#value' => t('Add one more'),
-        '#submit' => array('::addOne'),
-        '#ajax' => [
-          'callback' => '::addmoreCallback',
-          'wrapper' => "names-fieldset-wrapper",		
-		],		
-		'#prefix' => '<div class="clearboth">',       
-    ];
-    if ($form_state->get('num_document') > 1) {
-        $form['document']['actions']['remove_name'] = [
-          '#type' => 'submit',		 
-          '#value' => t('Remove one'),
-          '#submit' => array('::removeCallback'),
-          '#ajax' => [
-            'callback' => '::addmoreCallback',
-            'wrapper' => "names-fieldset-wrapper",
-          ],		  
-		  '#suffix' => '</div><br>',
-        ];
+		$form['document']['actions'] = [
+			'#type' => 'actions',
+			'#class' => 'clearboth',
+		];
+
+		$form['document']['actions']['add_name'] = [
+			'#type' => 'submit',
+			'#value' => t('Add one more'),
+			'#submit' => array('::addOne'),
+			'#ajax' => [
+				'callback' => '::addmoreCallback',
+				'wrapper' => "names-fieldset-wrapper",		
+			],		
+			'#prefix' => '<div class="clearboth">',       
+		];
+		if ($form_state->get('num_document') > 1) {
+			$form['document']['actions']['remove_name'] = [
+				'#type' => 'submit',		 
+				'#value' => t('Remove one'),
+				'#submit' => array('::removeCallback'),
+				'#ajax' => [
+					'callback' => '::addmoreCallback',
+					'wrapper' => "names-fieldset-wrapper",
+				],		  
+				'#suffix' => '</div><br>',
+			];
+		}
+		$form_state->setCached(FALSE);
+
+		$form['submit'] = [
+			'#type' => 'submit',
+			'#value' => t('Submit'),
+		];
+	}else {
+		$form['description'] = [
+			'#type' => 'markup',
+			'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+		];
 	}
-	$form_state->setCached(FALSE);
-
-	$form['submit'] = [
-      '#type' => 'submit',
-      '#value' => t('Submit'),
-	/*  '#attributes' => [
-        'class' => [
-            'btn',
-            'btn-md',
-            'btn-primary',
-            'use-ajax-submit'
-        ]
-    ],
-    '#ajax' => [
-        'wrapper' => 'adddocument_wrapper',
-    ]*/
-    ];
     return $form;
   }
   

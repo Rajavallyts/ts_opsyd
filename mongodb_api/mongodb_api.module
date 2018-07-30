@@ -357,45 +357,10 @@ function mongodb_parseJSON($json_input)
 /*
  * Implements hook_user_logout
  */
-function mongodb_api_user_login(\Drupal\user\UserInterface $account) {
-	
-	// Default login destination over ride
-	/* $current_request = \Drupal::service('request_stack')->getCurrentRequest();
-	
-	if (strpos($_SERVER["HTTP_REFERER"], '/user/reset/') === false) {
-		if(in_array("datauser",\Drupal::currentUser()->getRoles())){
-			$current_request->query->set(
-			  'destination',
-			  \Drupal\Core\Url::fromRoute('mongodb_api.dataformslist')->toString()
-			);
-		}
-		
-		if(in_array("datamanager",\Drupal::currentUser()->getRoles())){
-			$current_request->query->set(
-			  'destination','mongodb-list'
-			);
-		}
-	} */
-	$path = \Drupal::request()->getpathInfo();
-	$arg  = explode('/',$path);
-	 
-	if ((in_array("user", $arg) && in_array("reset", $arg)) || (in_array("user", $arg) && in_array("edit", $arg) && isset($_REQUEST['pass-reset-token'])))  { 
-	  
-	} else {
-		$current_request = \Drupal::service('request_stack')->getCurrentRequest();
-		$current_request->query->set(
-		'destination','/'
-		);
-	}
-}
-
-/*
- * Implements hook_user_logout
- */
 
 function mongodb_api_user_logout($account)
 {
-	if ($_SESSION['mongodb_token'] != "") {
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/close";
 		$api_param = array ("token" => $_SESSION['mongodb_token']);
 									 
@@ -497,7 +462,7 @@ function mongodb_api_page_attachments(array &$attachments) {
 
 function checkConnectionStatus(){
 	global $base_url;
-	if ($_SESSION['mongodb_token'] != "") {
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/isValidToken";
 		$api_param = array ("token" => $_SESSION['mongodb_token']);
 									 
@@ -546,7 +511,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 
 function mongodb_api_connect($mongodb_nid, $group_id = NULL){
 	global $base_url;
-	if ($_SESSION['mongodb_token'] != "") {
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/close";
 		$api_param = array ("token" => $_SESSION['mongodb_token']);
 									 
@@ -651,7 +616,9 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		
 		if(!empty($group_id))
 			$_SESSION['group_id'] = $group_id;
-		drupal_set_message (t('Success - Mongo DB connection establised.'));
+		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+		if($showHideJson == "Yes")
+			drupal_set_message (t('Success - Mongo DB connection establised.'));
 		
 		// Begin - checking schema changes
 		$check_schema = mongodb_check_schema();

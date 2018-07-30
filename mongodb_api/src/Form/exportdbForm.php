@@ -20,7 +20,7 @@ class exportdbForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {	 
 	checkConnectionStatus();
 	global $base_url;
-	  if ($_SESSION['mongodb_token'] != "") {	
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {	
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/export";	
 		$api_param = array ( "token" => $_SESSION['mongodb_token']);
 		$ch = curl_init();
@@ -50,7 +50,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {	    
-	if ($_SESSION['mongodb_token'] != "") { 
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") { 
 		
 	}
 }

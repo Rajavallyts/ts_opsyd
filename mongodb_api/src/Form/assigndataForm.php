@@ -1,11 +1,12 @@
 <?php
-namespace Drupal\mongodb_api\assigndataForm;
+namespace Drupal\mongodb_api\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\group\Entity;
 use Drupal\group\Entity\Group;
 use Drupal\dataform\Entity\DataForm;
+use Drupal\opsyd_subgroups\Entity\OpsydSubgroups;
 
 class assigndataForm extends FormBase {
 
@@ -24,12 +25,13 @@ class assigndataForm extends FormBase {
 		\Drupal::service('page_cache_kill_switch')->trigger();
 		global $base_url;
 		
-		if ($_SESSION['mongodb_token'] != ""){
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){
 			$form['add_user'] = [
-				'#markup' => '<a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addgroupuser">'.t("Create a New User").'</a>',
+				'#markup' => '<!-- <a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addsubgroup">'.t("Create a Subgroup").'</a>&nbsp;&nbsp; --><a class="use-ajax" data-dialog-type="modal" data-dialog-options="{&quot;width&quot;:500}" href="'.$base_url.'/addgroupuser">'.t("Create a New User").'</a>',
 			];
 			
 			$group_id = $_SESSION['group_id'];
+			
 			$cur_connection_id = $_SESSION['mongodb_nid'];
 			
 			$webform_array = $users_array = array();
@@ -40,74 +42,97 @@ class assigndataForm extends FormBase {
 						$node_details = $content->getEntity();
 						$webform_id = $node_details->get("webform")->getValue()[0]["target_id"];
 						
-							$query = \Drupal::entityQuery('dataform')
-								->condition('field_web_form_id', $webform_id);
-							$df_ids = $query->execute();
-							foreach($df_ids as $df_id){
-								$dataform_id = $df_id;
+						$query = \Drupal::entityQuery('dataform')
+							->condition('field_web_form_id', $webform_id);
+						$df_ids = $query->execute();
+						foreach($df_ids as $df_id){
+							$dataform_id = $df_id;
+						}
+						$dataform = DataForm::load($dataform_id);
+						$connection_id = $dataform->field_mongodb_connection_ref->value;
+						
+						if($cur_connection_id == $connection_id ){
+						
+							$webform = \Drupal\webform\Entity\Webform::load($webform_id);
+							if($webform){
+								$webform_title = $webform->get("title");
+								$webform_array[$webform_id]  = $webform_title;
 							}
-							$dataform = DataForm::load($dataform_id);
-							$connection_id = $dataform->field_mongodb_connection_ref->value;
-							
-							if($cur_connection_id == $connection_id ){
-							
-						$webform = \Drupal\webform\Entity\Webform::load($webform_id);
-						if($webform){
-							$webform_title = $webform->get("title");
-							$webform_array[$webform_id]  = $webform_title;
+						}
+					}
+					if(strpos($content->getGroupContentType()->id(), 'group_membership') !== false){
+						$user_details = $content->getEntity();
+						
+						if(in_array("datauser",$user_details->getRoles())){
+							$user_id	= $user_details->uid->value;
+							$user_name	= $user_details->name->value;
+							$users_array[$user_id] = $user_name;
 						}
 					}
 				}
-				if(strpos($content->getGroupContentType()->id(), 'group_membership') !== false){
-					$user_details = $content->getEntity();
-					
-					if(in_array("datauser",$user_details->getRoles())){
-						$user_id	= $user_details->uid->value;
-						$user_name	= $user_details->name->value;
-						$users_array[$user_id] = $user_name;
-					}
-				}
 			}
-		}
-		
-		$form['webforms'] = [
-			'#type' => 'select',
-			'#title' => t('Choose data forms'),
-			'#required' => TRUE,
-			'#options' => $webform_array,
-			'#empty_option' => $this->t('Select'),
-			'#ajax' => [
-				'callback' => '::updateUserValue',
-				'wrapper' => 'user-wrapper',
-			],
-		];
-		
-		$form['user_wrapper'] = [
-		  '#type' => 'container',
-		  '#attributes' => ['id' => 'user-wrapper'],
-		];
+			
+			/* $subgroup_list = array();
+			
+			$query = \Drupal::entityQuery('opsyd_subgroups')
+				->condition('status', 1)
+				->condition('field_parent_group_id', $group_id, '=');
+			$subgroups = $query->execute();
+			
+			if(!empty($subgroups)){
+				
+				foreach($subgroups as $subgroup_id){
+					$subgroup = OpsydSubgroups::load($subgroup_id);
+					$subgroup_list[$subgroup_id] = $subgroup->field_sub_group_name->value;
+				}
+			} */
+			
+			$form['webforms'] = [
+				'#type' => 'select',
+				'#title' => t('Choose data forms'),
+				'#required' => TRUE,
+				'#options' => $webform_array,
+				'#empty_option' => $this->t('Select'),
+				'#ajax' => [
+					'callback' => '::updateUserValue',
+					'wrapper' => 'user-wrapper',
+				],
+			];
+			
+			$form['user_wrapper'] = [
+			  '#type' => 'container',
+			  '#attributes' => ['id' => 'user-wrapper'],
+			];
 
-		$cur_webform = $form_state->getValue("webforms");
-		$form['user_wrapper']['datauser_hidden'] = [
-			'#type' => 'hidden',
-			'#value' => ($cur_webform != "") ? $this->getUserArray($cur_webform) : '',
-		];
-		
-		$form['datauser'] = [
-			'#type' => 'select',
-			'#title' => t('Choose a data user'),
-			'#multiple' => TRUE,
-			'#required' => TRUE,
-			'#options' => $users_array,
-			'#empty_option' => $this->t('Select'),
-		];
+			$cur_webform = $form_state->getValue("webforms");
+			$form['user_wrapper']['datauser_hidden'] = [
+				'#type' => 'hidden',
+				'#value' => ($cur_webform != "") ? $this->getUserArray($cur_webform) : '',
+			];
+			
+			$form['datauser'] = [
+				'#type' => 'select',
+				'#title' => t('Choose a data user'),
+				'#multiple' => TRUE,
+				'#required' => TRUE,
+				'#options' => $users_array,
+				'#empty_option' => $this->t('Select'),
+			];
 
-		$form['submit_update'] = [
-			'#type' => 'submit',
-			'#name' => 'update_btn',
-			'#value' => t('Update'),
-			'#button_type' => 'primary',
-		];
+			/* $form['subgroup'] = [
+				'#type' => 'select',
+				'#title' => t('Choose a Subgroup'),
+				'#multiple' => TRUE,
+				'#options' => $subgroup_list,
+				'#empty_option' => $this->t('Select'),
+			]; */
+
+			$form['submit_update'] = [
+				'#type' => 'submit',
+				'#name' => 'update_btn',
+				'#value' => t('Update'),
+				'#button_type' => 'primary',
+			];
 		}else{
 			$form['notice'] = [
 				'#markup' => "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>"
@@ -165,8 +190,6 @@ class assigndataForm extends FormBase {
 		$update_txt = '';
 		$remove_array = array();
 		$user_ids = $form_state->getValue("datauser");
-		
-		//print "<pre>"; print_r($user_ids); print "</pre>"; die();
 		
 		$user_id_txt = implode(",",$user_ids);
 		$dataform->set("field_user_access_list",$user_id_txt);

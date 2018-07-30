@@ -24,7 +24,7 @@ class mdbschemaForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 	global $base_url;
 	
-	if ($_SESSION['mongodb_token'] != ""){		
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){		
 		$query = \Drupal::entityQuery('mdb_schema')
 							->condition('status', 1)
 							->condition('field_mongodb_connection_ref', $_SESSION['mongodb_nid'], '=');
@@ -158,8 +158,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$cur_collection_array = $form_values["current_collection_array"];
 			$old_collection_array = $form_values["old_collection_array"];
 			$coll_diff = array_diff($old_collection_array, $cur_collection_array);
-			
-			$coll_diff = array('Product');
 			
 			if(!empty($coll_diff)){
 				$query = \Drupal::entityQuery('dataform')

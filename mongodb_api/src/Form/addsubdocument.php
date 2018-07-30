@@ -19,107 +19,105 @@ class addsubdocument extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, FormStateInterface $form_state) {	  
-   $form['api_result'] = array (
-		'#type' => 'markup',
-		'#markup' => "<b>" . $_GET['mongodb_collection']. " > " . $_GET['document_id'] . "</b><br><br>",
-	 );
-	 
-      $form['#tree'] = TRUE;
-	  $form['#prefix'] = "<div id='adddocument_wrapper'>";
-	  $form['#suffix'] = "</div>";
-	  $form['subdocument_key'] = [
-		'#type' => 'textfield',
-		'#required' => TRUE,
-		'#title' => t('Document Key'),
-	  ];
-	  $form['document_id'] = [
-		'#type' => 'hidden',
-		'#value' => $_GET['document_id'],
-	  ];
-	  
-      $form['subdocument'] = [
-       '#type' => 'fieldset',     
-       '#prefix' => "<div id='subnames-fieldset-wrapper'>",
-       '#suffix' => '</div>',
-	   '#title' => $this->t(' Sub Document [Key - Value]  '),
-      ];
-	  $form['validator'] = array(
-		'#type' => 'hidden',
-		'#name' => 'validator');
+  public function buildForm(array $form, FormStateInterface $form_state) {
+	global $base_url;
+	checkConnectionStatus();
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
+	   $form['api_result'] = array (
+			'#type' => 'markup',
+			'#markup' => "<b>" . $_GET['mongodb_collection']. " > " . $_GET['document_id'] . "</b><br><br>",
+		 );
+		 
+		  $form['#tree'] = TRUE;
+		  $form['#prefix'] = "<div id='adddocument_wrapper'>";
+		  $form['#suffix'] = "</div>";
+		  $form['subdocument_key'] = [
+			'#type' => 'textfield',
+			'#required' => TRUE,
+			'#title' => t('Document Key'),
+		  ];
+		  $form['document_id'] = [
+			'#type' => 'hidden',
+			'#value' => $_GET['document_id'],
+		  ];
+		  
+		  $form['subdocument'] = [
+		   '#type' => 'fieldset',     
+		   '#prefix' => "<div id='subnames-fieldset-wrapper'>",
+		   '#suffix' => '</div>',
+		   '#title' => $this->t(' Sub Document [Key - Value]  '),
+		  ];
+		  $form['validator'] = array(
+			'#type' => 'hidden',
+			'#name' => 'validator');
+			
+
+		   $num_docs = $form_state->get('num_subdocument');
+		   if (empty($num_docs)) {
+			   $document_field = $form_state->set('num_subdocument', 1);
+		   }
+			for($i = 0; $i < $num_docs; $i++){
+				$form['subdocument'][$i]['key'] = array(
+					'#type' => 'textfield',      
+					'#required' => FALSE,	  	  
+					'#class' => 'value-field',
+					'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),
+					'#prefix' => '<div class="clearboth">',       				
+					'#theme_wrappers' => array(),
+					'#size' => 2000,
+					'#required' => $i == 0 ? TRUE : FALSE,
+				);
+				$form['subdocument'][$i]['valuee'] = array(
+					'#type' => 'textfield',      
+					'#required' => FALSE,	  	  
+					'#class' => 'value-field',	  
+					'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
+					'#suffix' => '</div><br>',
+					'#theme_wrappers' => array(),
+					'#size' => 2000,
+					'#required' => $i == 0 ? TRUE : FALSE,
+				);	
+			}				
 		
+		$form['subdocument']['actions'] = [
+			'#type' => 'actions',
+			'#class' => 'clearboth',
+		];
 
-	   $new_field = $form_state->get('num_subdocument');
-	   if (empty($new_field)) {
-		   $new_field = $form_state->set('num_subdocument', 1);
-	   }
-		for($i = 0; $i < $new_field; $i++){
-			$form['subdocument'][$i]['key'] = array(
-				'#type' => 'textfield',      
-				'#required' => FALSE,	  	  
-				'#class' => 'value-field',
-				'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),
-				'#prefix' => '<div class="clearboth">',       				
-				'#theme_wrappers' => array(),
-				'#size' => 2000,
-				'#required' => $i == 0 ? TRUE : FALSE,
-			);
-			$form['subdocument'][$i]['valuee'] = array(
-				'#type' => 'textfield',      
-				'#required' => FALSE,	  	  
-				'#class' => 'value-field',	  
-				'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
-				'#suffix' => '</div><br>',
-				'#theme_wrappers' => array(),
-				'#size' => 2000,
-				'#required' => $i == 0 ? TRUE : FALSE,
-			);	
-		}				
-	
-	$form['subdocument']['actions'] = [
-		'#type' => 'actions',
-		'#class' => 'clearboth',
-	];
+		$form['subdocument']['actions']['add_name'] = [
+			'#type' => 'submit',
+			'#value' => t('Add one more'),
+			'#submit' => array('::addOne'),
+			'#ajax' => [
+			  'callback' => '::addmoreCallback',
+			  'wrapper' => "subnames-fieldset-wrapper",		
+			],		
+			'#prefix' => '<div class="clearboth">',       
+		];
+		if ($form_state->get('num_subdocument') > 1) {
+			$form['subdocument']['actions']['remove_name'] = [
+			  '#type' => 'submit',		 
+			  '#value' => t('Remove one'),
+			  '#submit' => array('::removeCallback'),
+			  '#ajax' => [
+				'callback' => '::addmoreCallback',
+				'wrapper' => "subnames-fieldset-wrapper",
+			  ],		  
+			  '#suffix' => '</div><br>',
+			];
+		}
+		$form_state->setCached(FALSE);
 
-	$form['subdocument']['actions']['add_name'] = [
-		'#type' => 'submit',
-        '#value' => t('Add one more'),
-        '#submit' => array('::addOne'),
-        '#ajax' => [
-          'callback' => '::addmoreCallback',
-          'wrapper' => "subnames-fieldset-wrapper",		
-		],		
-		'#prefix' => '<div class="clearboth">',       
-    ];
-    if ($form_state->get('num_subdocument') > 1) {
-        $form['subdocument']['actions']['remove_name'] = [
-          '#type' => 'submit',		 
-          '#value' => t('Remove one'),
-          '#submit' => array('::removeCallback'),
-          '#ajax' => [
-            'callback' => '::addmoreCallback',
-            'wrapper' => "subnames-fieldset-wrapper",
-          ],		  
-		  '#suffix' => '</div><br>',
-        ];
+		$form['submit'] = [
+		  '#type' => 'submit',
+		  '#value' => t('Submit'),
+		];
+	}else {
+		$form['description'] = [
+			'#type' => 'markup',
+			'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+		];
 	}
-	$form_state->setCached(FALSE);
-
-	$form['submit'] = [
-      '#type' => 'submit',
-      '#value' => t('Submit'),
-	/*  '#attributes' => [
-        'class' => [
-            'btn',
-            'btn-md',
-            'btn-primary',
-            'use-ajax-submit'
-        ]
-    ],
-    '#ajax' => [
-        'wrapper' => 'adddocument_wrapper',
-    ]*/
-    ];
     return $form;
   }
   

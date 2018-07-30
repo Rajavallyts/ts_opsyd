@@ -21,8 +21,9 @@ class addcollectionForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 	  global $base_url;	  
 	  $server_output = "";
+	  checkConnectionStatus();
 	  
-	  if ($_SESSION['mongodb_token'] != "") {
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 		$form['collection_name'] = [
 		  '#type' => 'textfield',
 		  '#required' => TRUE,
@@ -33,10 +34,10 @@ class addcollectionForm extends FormBase {
 		  '#value' => t('Add Collection'),
 		];
 	  } else {
-		  $form['description'] = [
+		 $form['description'] = [
 			'#type' => 'markup',
-			'#markup' => 'No MongoDB Connection available.',
-		  ];		  
+			'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+		 ];
 	  }
     return $form;
   }

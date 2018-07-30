@@ -20,7 +20,7 @@ class importdbForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 	  checkConnectionStatus();
 	  global $base_url;
-	  if ($_SESSION['mongodb_token'] != "") {	
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {	
 			
 		//$json_result = json_decode($server_output, true);				
 		

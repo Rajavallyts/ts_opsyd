@@ -26,7 +26,7 @@ class collectionrelationForm extends FormBase {
 		global $base_url;
 		checkConnectionStatus();
 		
-		if ($_SESSION['mongodb_token'] != ""){					
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections";
 
 			$api_param = array ( "token" => $_SESSION['mongodb_token']);
@@ -40,7 +40,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$json_result = json_decode($server_output, true);	
 						
 			$collection_list = array();
-			if (count ($json_result) > 0 ) {				
+			if (count ($json_result) > 0 ) {
 				foreach($json_result as $result):			
 					$collection_list[$result['name']] = $result['name'];					
 				endforeach;				
@@ -49,7 +49,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			// collection relation
 			if((isset($_GET["add"]) && $_GET["add"] == "coll") || isset($_GET["coll_rel"])){
 				$source_collection = $relative_collection = $source_key = $relative_key = $relative_value = '';
-				if($_GET["coll_rel"] != ""){
+				if(isset($_GET["coll_rel"]) && $_GET["coll_rel"] != ""){
 					$coll_rel = CollectionRelations::load($_GET["coll_rel"]);
 					$source_collection = $coll_rel->field_source_collection->value;
 					$relative_collection = $coll_rel->field_relative_collection->value;
@@ -77,6 +77,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#suffix' => '</div>'
 				];
 				
+				$source_collection_options = '';
 				if(!empty($source_collection)){
 					$source_collection_options = $source_collection;
 				}
@@ -118,6 +119,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					'#suffix' => '</div>'
 				];
 				
+				$relative_collection_options = '';
 				if(!empty($relative_collection)){
 					$relative_collection_options = $relative_collection;
 				}
@@ -286,38 +288,40 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 
 function getKeyArray($collection){
 	
-$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $collection ."/find";
-	$api_param = array ( "token" => $_SESSION['mongodb_token']);
-	$ch = curl_init();
-	curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	$server_output = curl_exec ($ch);		
-	curl_close ($ch);
-		
-	$json_results = json_decode($server_output, true);
-		 
-	$new_json = array();
-	foreach($json_results as $json_result){
-		$new_json = array_merge_recursive($new_json,$json_result);
-	}
-	$json_result = $new_json;
-	
 	$key_array = array('' => t('Select'));
-	if(!empty($json_result)){
-		foreach($json_result as $resultkey => $resultValue){
-			//if($resultkey != "_id"){
-				if (is_array($resultValue) && is_associative($resultValue)){
-					$sub_key_arrays = nestedkeylevel($resultkey, $resultValue);
-					$sub_arrays = explode("$$$",rtrim($sub_key_arrays,"$$$"));
-					foreach($sub_arrays as $sub_array){
-						$key_array[$sub_array] = str_replace("###",".",$sub_array);
+	if(!empty($collection)){
+$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $collection ."/find";
+		$api_param = array ( "token" => $_SESSION['mongodb_token']);
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+		$server_output = curl_exec ($ch);		
+		curl_close ($ch);
+			
+		$json_results = json_decode($server_output, true);
+			 
+		$new_json = array();
+		foreach($json_results as $json_result){
+			$new_json = array_merge_recursive($new_json,$json_result);
+		}
+		$json_result = $new_json;
+		
+		if(!empty($json_result)){
+			foreach($json_result as $resultkey => $resultValue){
+				//if($resultkey != "_id"){
+					if (is_array($resultValue) && is_associative($resultValue)){
+						$sub_key_arrays = nestedkeylevel($resultkey, $resultValue);
+						$sub_arrays = explode("$$$",rtrim($sub_key_arrays,"$$$"));
+						foreach($sub_arrays as $sub_array){
+							$key_array[$sub_array] = str_replace("###",".",$sub_array);
+						}
+					} else {					
+						$key_array[$resultkey] = $resultkey;
 					}
-				} else {					
-					$key_array[$resultkey] = $resultkey;
-				}
-			//}
+				//}
+			}
 		}
 	}
 	
@@ -328,7 +332,7 @@ function nestedkeylevel($subKey, $subResultValue){
 	$array_index = '';
 	foreach($subResultValue as $key => $value){
 		if (is_array($value) && is_associative($value)){
-			$array_index .= nestedkeylevel($subKey.'$$$'.$key, $value);
+			$array_index .= nestedkeylevel($subKey.'###'.$key, $value);
 		} else {					
 			$array_index .= $subKey.'###'.$key."$$$";
 		}

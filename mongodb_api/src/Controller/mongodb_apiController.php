@@ -34,7 +34,7 @@ class mongodb_apiController extends ControllerBase {
   public function connectMongoDB()
   {
 	  global $base_url;
-	  if ($_SESSION['mongodb_token'] != "") {
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/close";
 		$api_param = array ("token" => $_SESSION['mongodb_token']);
 									 
@@ -86,7 +86,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	  
 		global $base_url;
 		$output_html = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
-		if ($_SESSION['mongodb_token'] != ""){					
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections";
 
 			$api_param = array ( "token" => $_SESSION['mongodb_token']);
@@ -133,7 +133,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	  
 		global $base_url;
 		$output_html = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
-		if ($_SESSION['mongodb_token'] != ""){					
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections";
 
 			$api_param = array ( "token" => $_SESSION['mongodb_token']);
@@ -193,7 +193,7 @@ public function listcollectionform() {
 			$mongodb_collection = $_SESSION["data_mongodb_collection"];
 	}
 	
-	if ($_SESSION['mongodb_token'] != ""){
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){
 		if (!empty($mongodb_collection)) {
 			$cur_connection_id = $_SESSION['mongodb_nid'];
 			
@@ -273,7 +273,7 @@ public function listcollectionform() {
 		 \Drupal::service('page_cache_kill_switch')->trigger();
 		$output_html = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
 		$prefix = '';
-		if ($_SESSION['mongodb_token'] != ""){
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){
 		
 		$mongodb_collection = '';
 		if (isset($_GET['mongodb_collection'])) {							
@@ -355,7 +355,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		checkConnectionStatus();
 		 
 		$output_html = "<BR><BR>MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>";
-		if ($_SESSION['mongodb_token'] != ""){
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){
 			
 			$mongodb_collection = $webform_id = '';
 			if (isset($_GET['mongodb_collection']) && isset($_GET['webform_id'])) {
@@ -395,6 +395,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							$output_html = '<table id="dataform_list" class="display nowrap" style="width:100%"><thead><tr>';
 						
 							$relative_column = $rel_td_array = array();
+							$no_relation = 0;
 							foreach ($webform_elements_keys as $field):
 								$query = \Drupal::entityQuery('collection_relations')
 										->condition('status', 1)
@@ -421,8 +422,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 									$documents = json_decode($document_lists, true);
 
 									foreach($documents as $document){
-										if(isset($document[$rel_value]))
+										if(isset($document[$rel_value]) && !is_array($document[$rel_value]))
 											$rel_td_array[$field][$document[$rel_key]] = $document[$rel_value];
+										else
+											$no_relation = 1;
 									}
 								}
 						
@@ -438,8 +441,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 														
 							foreach ($webform_elements_keys as $field):
 								if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1){
-									if(in_array($field, $relative_column)){											
-										$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
+									if(in_array($field, $relative_column)){	
+										if($no_relation == 1)
+											$td_value = isset($result[$field]) ? $result[$field] : '';
+										else									
+											$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
 									}else{
 										if(isset($result[$field]) && !empty($result[$field])){
 											$regex = '/^[^?]*\.(jpg|jpeg|gif|png)/m';
@@ -628,6 +634,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$output_html = '<table id="dataform_list" class="display nowrap" style="width:100%"><thead><tr>';
 			
 				$relative_column = $rel_td_array = array();
+				$no_relation = 0;
 				foreach ($webform_elements_keys as $field){
 					$query = \Drupal::entityQuery('collection_relations')
 							->condition('status', 1)
@@ -654,8 +661,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$documents = json_decode($document_lists, true);
 
 						foreach($documents as $document){
-							if(isset($document[$rel_value]))
+							if(isset($document[$rel_value]) && !is_array($document[$rel_value]))
 								$rel_td_array[$field][$document[$rel_key]] = $document[$rel_value];
+							else
+								$no_relation = 1;
 						}
 					}
 				
@@ -669,8 +678,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					$output_html .= "<tr>";
 					foreach ($webform_elements_keys as $field){
 						if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1){
-							if(in_array($field, $relative_column)){											
-								$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
+							if(in_array($field, $relative_column)){
+								if($no_relation == 1)
+									$td_value = isset($result[$field]) ? $result[$field] : '';
+								else
+									$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
 							}else{
 								if(isset($result[$field]) && !empty($result[$field])){
 									$regex = '/^[^?]*\.(jpg|jpeg|gif|png)/m';
@@ -704,7 +716,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						}
 					}
 					
-					$output_html .= "<td><a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":600}' href='".$base_url."/mongodb_api/managedataform?mongodb_collection=".$mongodb_collection."&webform_id=".$webform_id."&document_id=".$result['_id']."'>Edit</a></td></tr>";
+					$output_html .= "<td><a href='".$base_url."/mongodb_api/managedataform?mongodb_collection=".$mongodb_collection."&webform_id=".$webform_id."&document_id=".$result['_id']."'>Edit</a></td></tr>";
 				}	
 
 				$output_html .= "</tbody></table>";
@@ -712,7 +724,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$output_html = 'No document found!';
 			}
 			$add_title_text = ucfirst($mongodb_collection);
-			$prefix = "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":600}' href='" . $base_url . "/mongodb_api/managedataform?mongodb_collection=".$mongodb_collection."&webform_id=".$webform_id."'>Add ".$add_title_text."</a><BR>";
+			$prefix = "<a href='" . $base_url . "/mongodb_api/managedataform?mongodb_collection=".$mongodb_collection."&webform_id=".$webform_id."'>Add ".$add_title_text."</a><BR>";
 		}else {
 			$output_html = "No Dataform form found.<br/>";
 		}
@@ -741,7 +753,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	$prefix1 = $prefix2 = "";
 	
 	$collection_lists = array();
-	if ($_SESSION['mongodb_token'] != ""){					
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != ""){					
 $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections";
 
 		$api_param = array ( "token" => $_SESSION['mongodb_token']);

@@ -203,11 +203,27 @@ mongodb_api.collectionrelationmanage:
   requirements:
     _permission: 'administer mongodb_api'
 
+mongodb_api.collectionfieldrelationmanage:
+  path: '/mongodb_api/collectionfieldrelation/manage'
+  defaults:
+    _form: '\Drupal\mongodb_api\Form\collectionfieldrelationForm'
+    _title: 'Manage Collection Field Relations'
+  requirements:
+    _permission: 'administer mongodb_api'
+
 mongodb_api.collectionrelationdeleteconfirm:
   path: '/mongodb_api/collectionrelation/delete/confirm'
   defaults:
     _form: '\Drupal\mongodb_api\Form\collectionrelationdeleteForm'
     _title: 'Delete Collection Relations'
+  requirements:
+    _permission: 'administer mongodb_api'
+
+mongodb_api.collectionfieldrelationdeleteconfirm:
+  path: '/mongodb_api/collectionfieldrelation/delete/confirm'
+  defaults:
+    _form: '\Drupal\mongodb_api\Form\collectionfieldrelationdeleteForm'
+    _title: 'Delete Collection Field Relation'
   requirements:
     _permission: 'administer mongodb_api'
     
@@ -216,6 +232,14 @@ mongodb_api.collectionrelationdelete:
   defaults:
     _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::collectionrelationsdelete'
     _title: 'Delete Collection Relations'
+  requirements:
+    _permission: 'administer mongodb_api'
+
+mongodb_api.collectionfieldrelationdelete:
+  path: '/mongodb_api/collectionfieldrelation/delete'
+  defaults:
+    _controller: '\Drupal\mongodb_api\Controller\mongodb_apiController::collectionfieldrelationsdelete'
+    _title: 'Delete Collection Field Relation'
   requirements:
     _permission: 'administer mongodb_api'
 
@@ -244,10 +268,24 @@ mongodb_api.addgroupuser:
    requirements:
       _permission: 'administer mongodb_api'
 
+mongodb_api.addsubgroup:
+   path: '/addsubgroup'
+   defaults:
+      _form: '\Drupal\mongodb_api\Form\addsubgroupForm'
+      _title: 'Create a Subgroup'
+   requirements:
+      _permission: 'administer mongodb_api'
 mongodb_api.mdb_schema:
   path: /mongodb_api/mdb_schema
   defaults:
     _form: 'Drupal\mongodb_api\Form\mdbschemaForm'
     _title: 'Mongodb Schema'
   requirements:
-    _permission: 'administer mongodb_api'
+    _permission: 'administer mongodb_api'          
+mongodb_api.mdbschema_kvsettings:
+  path: /mongodb_api/mdbschema_kvsettings
+  defaults:
+    _form: 'Drupal\mongodb_api\Form\mdbschema_kvsettingsForm'
+    _title: 'Mongodb Schema'
+  requirements:
+    _permission: 'administer mongodb_api'              

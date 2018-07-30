@@ -17,94 +17,102 @@ class keyupdateForm extends FormBase{
 	*/
 	public function buildForm(array $form, FormStateInterface $form_state){
 		global $base_url;
-		$server_output = "";
+		checkConnectionStatus();
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 		
-		if (isset($_GET['mongodb_collection'])) {
-			$document_id = $_GET['document_id'];
-			$collection_name = $_GET['mongodb_collection'];
-$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $collection_name ."/findByID";		  
-			$api_param = array ( "token" => $_SESSION['mongodb_token'], "id" => $document_id);
-									 
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
-			curl_setopt($ch, CURLOPT_POST, 1);
-			curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			$server_output = curl_exec ($ch);		
-			curl_close ($ch);	
-		}
-		$json_result = json_decode($server_output, true);
-
-		$i=0;
-
-		$form['#tree'] = TRUE;
-		$form['#attached']['library'][] = 'mongodb_api.customcss';
-
-		$form['document'] = [
-		'#type' => 'fieldset',
-		'#title' => $this->t(' Existing Key - New Key '),
-		'#prefix' => "<div>",
-		'#suffix' => '</div>',
-		'#collapsible' => TRUE,
-		'#collapsed' => FALSE,
-		];
-		
-		foreach($json_result as $resultkey => $resultValue):
-			if (($resultkey != "_id")) {								
-
-				if (is_array($resultValue) && is_asso($resultValue)){
-					$form['document'][$i] = array(
-						'#type' => 'details',
-						'#title' => $resultkey ,
-						'#prefix' => '<div class="clearboth">',
-						'#suffix' => '</div>',
-						'#open' => TRUE,
-					);
-					
-					$form['document'][$i]['edit'] = array(
-						'#markup' => "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url."/mongodb_api/parentkeyupdate?mongodb_collection=".$collection_name."&document_id=".$document_id."&key=".$resultkey."'>edit ".$resultkey."</a>"
-					);
-					
-					$form['document'][$i]['key'] = array(
-						'#type' => 'hidden',
-						'#default_value' => $resultkey,						
-					);
-
-					$form['document'][$i]['document'] = add_sublevel($resultkey, $resultkey, $resultValue);
-				} else {
-			
-				$form['document'][$i]['key'] = array(
-					'#type' => 'textfield',      
-					'#required' => FALSE,
-					'#default_value' => $resultkey,	 
-					'#class' => 'value-field',
-						'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;','disabled' => 'disabled'),  
-					'#prefix' => '<div class="clearboth">',
-					'#size' => 2000,
-				);
-				
-				$form['document'][$i]['valuee'] = array(
-					'#type' => 'textfield',      
-					'#required' => FALSE,	  	  
-					'#class' => 'value-field',	  
-					'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
-					'#suffix' => '</div><br>',
-					'#size' => 2000,
-				);	
-				}
-				
-				$i++;
+			if (isset($_GET['mongodb_collection'])) {
+				$document_id = $_GET['document_id'];
+				$collection_name = $_GET['mongodb_collection'];
+	$api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."/collections/" . $collection_name ."/findByID";		  
+				$api_param = array ( "token" => $_SESSION['mongodb_token'], "id" => $document_id);
+										 
+				$ch = curl_init();
+				curl_setopt($ch, CURLOPT_URL, $api_endpointurl);
+				curl_setopt($ch, CURLOPT_POST, 1);
+				curl_setopt($ch, CURLOPT_POSTFIELDS,http_build_query($api_param));
+				curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+				$server_output = curl_exec ($ch);		
+				curl_close ($ch);	
+				$json_result = json_decode($server_output, true);
 			}
-		endforeach;
-		//die();
-		
-		$form_state->setCached(FALSE);
 
-		$form['submit'] = [
-		  '#type' => 'submit',
-		  '#value' => t('Save Changes'),
-		  '#name' => 'save_changes',
-		];
+			$i=0;
+
+			$form['#tree'] = TRUE;
+
+			$form['document'] = [
+			'#type' => 'fieldset',
+			'#title' => $this->t(' Existing Key - New Key '),
+			'#prefix' => "<div>",
+			'#suffix' => '</div>',
+			'#collapsible' => TRUE,
+			'#collapsed' => FALSE,
+			];
+			
+			if(!empty($json_result)){
+				foreach($json_result as $resultkey => $resultValue){
+					if (($resultkey != "_id")) {								
+
+						if (is_array($resultValue) && is_asso($resultValue)){
+							$form['document'][$i] = array(
+								'#type' => 'details',
+								'#title' => $resultkey ,
+								'#prefix' => '<div class="clearboth">',
+								'#suffix' => '</div>',
+								'#open' => TRUE,
+							);
+							
+							$form['document'][$i]['edit'] = array(
+								'#markup' => "<a class='use-ajax' data-dialog-type='modal' data-dialog-options='{\"width\":900}' href='".$base_url."/mongodb_api/parentkeyupdate?mongodb_collection=".$collection_name."&document_id=".$document_id."&key=".$resultkey."'>edit ".$resultkey."</a>"
+							);
+							
+							$form['document'][$i]['key'] = array(
+								'#type' => 'hidden',
+								'#default_value' => $resultkey,						
+							);
+
+							$form['document'][$i]['document'] = add_sublevel($resultkey, $resultkey, $resultValue);
+						} else {
+					
+						$form['document'][$i]['key'] = array(
+							'#type' => 'textfield',      
+							'#required' => FALSE,
+							'#default_value' => $resultkey,	 
+							'#class' => 'value-field',
+								'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;','disabled' => 'disabled'),  
+							'#prefix' => '<div class="clearboth">',
+							'#size' => 2000,
+						);
+						
+						$form['document'][$i]['valuee'] = array(
+							'#type' => 'textfield',      
+							'#required' => FALSE,	  	  
+							'#class' => 'value-field',	  
+							'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
+							'#suffix' => '</div><br>',
+							'#size' => 2000,
+						);	
+						}
+						
+						$i++;
+					}
+				}
+			
+			}
+			
+			$form_state->setCached(FALSE);
+
+			$form['submit'] = [
+			  '#type' => 'submit',
+			  '#value' => t('Save Changes'),
+			  '#name' => 'save_changes',
+			];
+		}else {
+			$form['description'] = [
+				'#type' => 'markup',
+				'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+			];
+		}
 		
 		return $form;
 	}

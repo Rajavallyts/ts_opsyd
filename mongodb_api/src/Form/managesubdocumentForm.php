@@ -20,7 +20,9 @@ class managesubdocumentForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-	  global $base_url;	  
+	global $base_url;
+	checkConnectionStatus();
+	if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 	  $server_output = "";
 	  
 	  $form['#tree'] = TRUE;
@@ -60,7 +62,8 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		'#collapsible' => TRUE,
 		'#collapsed' => FALSE,
 		'#tree' => TRUE,
-	];			
+	];
+	$i=0;
 		
 	foreach($json_result as $resultkey => $resultValue):			
 		
@@ -199,6 +202,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
       '#type' => 'submit',
       '#value' => t('Submit'),
     ];
+	}else {
+		$form['description'] = [
+			'#type' => 'markup',
+			'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+		];
+	}
 	
     return $form;
   }
@@ -267,7 +276,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$fields = "{";
 			foreach($document_values as $document_value)
 			{
-			 if ($document_value['remove_key'] == 1) {
+			 if (isset($document_value['remove_key']) && $document_value['remove_key'] == 1) {
 				 $query .= '"' . $_GET['editkey'] . '.' . $document_value['key'] . '":"' . $document_value['valuee'] . '",';
 				 $fields .= '"' . $_GET['editkey'] . '.'  . $document_value['key'] . '":"",';
 			 }
@@ -338,6 +347,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				$server_output = curl_exec ($ch);		
 				curl_close ($ch);
 		 
+				drupal_set_message("Updated Successfully");
 				$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 				if($showHideJson == "Yes")
 					drupal_set_message($server_output);

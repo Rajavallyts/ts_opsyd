@@ -186,7 +186,7 @@ margin-top: 10px;
 }
 
 div.dataTables_wrapper {
-	width: 920px;
+	width: 1240px;
 	margin: 0 auto;
 }
 
@@ -245,4 +245,26 @@ ul.sf-menu.menu, ul.sf-menu.menu ul, ul.sf-menu.menu li {
 
 .location-warning{
 	color: #b10404;
+}
+.messages .close-button {
+	float: right;
+	width: 16px;
+	height: 16px;
+	background: url("../images/close_button.png") 50% 50% no-repeat;
+	cursor: pointer;
+}
+.messages .close-button:hover {
+	background-color: rgba(255, 186, 186, 0.38); 
+}
+
+.location-filter{
+	float:right;
+	padding: 0px 10px;
+}
+.location-filter label{
+	float:left;
+}
+.location-filter #locations_filter {
+    width: 150px;
+	padding: 0px 5px;
 }

@@ -24,7 +24,7 @@ class configsettingForm extends ConfigFormBase {
 	$form['json_setting'] = [
       '#type' => 'select',
       '#title' => $this->t('JSON Hide/Show'),
-	  '#options' => ['Yes'=>"Yes", "No" => "No"],
+	  '#options' => ['Yes'=>"Show", "No" => "Hide"],
       '#default_value' => $config->get('json_setting'),	 
 	  '#description' => "Hide/Show the mongogdb json response in frontend."
     ];

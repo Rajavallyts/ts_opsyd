@@ -20,7 +20,7 @@ class closeconnectionForm extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 	  checkConnectionStatus();
 	  global $base_url;
-	  if ($_SESSION['mongodb_token'] != "") {
+	  if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
 		$form['description'] = [
 		  '#type' => 'markup',
 		  '#markup' => 'Do you want to close the Mongo DB Connection?<BR><BR>'

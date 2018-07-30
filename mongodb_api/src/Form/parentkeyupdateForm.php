@@ -18,48 +18,56 @@ class parentkeyupdateForm extends FormBase{
 	public function buildForm(array $form, FormStateInterface $form_state){
 		
 		global $base_url;
-		$document_id = $_GET['document_id'];
-		$collection_name = $_GET['mongodb_collection'];
-		
-		$key = $_GET['key'];
-		
-		if (strpos($key, '___') !== false) {
-			$keyparts = explode("___",$key);
-		}
-		
-		$cur_key = isset($keyparts) ? $keyparts[ count($keyparts)-1 ] : $key;
-		
-		$form['api_result'] = array (
-			'#type' => 'markup',
-			'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$collection_name."' target='_self'>".$collection_name."</a> > <a href='".$base_url. "/mongodb_api/managedocument?mongodb_collection=".$collection_name."&document_id=".$document_id."' target='_self'>".$document_id."</a> > ".$cur_key. "</b><br><br>",
-		);
-		
-		$form['key'] = array(
-			'#type' => 'textfield',      
-			'#required' => FALSE,
-			'#default_value' => $cur_key,	 
-			'#class' => 'value-field',
-			'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;','disabled' => 'disabled'),  
-			'#prefix' => '<div class="clearboth">',
-			'#size' => 2000,
-		);
-		
-		$form['valuee'] = array(
-			'#type' => 'textfield',      
-			'#required' => FALSE,	  	  
-			'#class' => 'value-field',	  
-			'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
-			'#suffix' => '</div><br>',
-			'#size' => 2000,
-		);
-		
-		$form_state->setCached(FALSE);
+		checkConnectionStatus();
+		if (isset($_SESSION['mongodb_token']) && $_SESSION['mongodb_token'] != "") {
+			$document_id = $_GET['document_id'];
+			$collection_name = $_GET['mongodb_collection'];
+			
+			$key = $_GET['key'];
+			
+			if (strpos($key, '___') !== false) {
+				$keyparts = explode("___",$key);
+			}
+			
+			$cur_key = isset($keyparts) ? $keyparts[ count($keyparts)-1 ] : $key;
+			
+			$form['api_result'] = array (
+				'#type' => 'markup',
+				'#markup' => "<b><a href='".$base_url."/mongodb_api/listdocument?mongodb_collection=".$collection_name."' target='_self'>".$collection_name."</a> > <a href='".$base_url. "/mongodb_api/managedocument?mongodb_collection=".$collection_name."&document_id=".$document_id."' target='_self'>".$document_id."</a> > ".$cur_key. "</b><br><br>",
+			);
+			
+			$form['key'] = array(
+				'#type' => 'textfield',      
+				'#required' => FALSE,
+				'#default_value' => $cur_key,	 
+				'#class' => 'value-field',
+				'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;','disabled' => 'disabled'),  
+				'#prefix' => '<div class="clearboth">',
+				'#size' => 2000,
+			);
+			
+			$form['valuee'] = array(
+				'#type' => 'textfield',      
+				'#required' => FALSE,	  	  
+				'#class' => 'value-field',	  
+				'#attributes' => array('style' => 'float: left; max-width: 350px; margin: 10px;'),				
+				'#suffix' => '</div><br>',
+				'#size' => 2000,
+			);
+			
+			$form_state->setCached(FALSE);
 
-		$form['submit'] = [
-		  '#type' => 'submit',
-		  '#value' => t('Save Changes'),
-		  '#name' => 'save_changes',
-		];
+			$form['submit'] = [
+			  '#type' => 'submit',
+			  '#value' => t('Save Changes'),
+			  '#name' => 'save_changes',
+			];
+		}else {
+			$form['description'] = [
+				'#type' => 'markup',
+				'#markup' => "MongoDB connection does not exist. <a href='" . $base_url . "/mongodb-list' alt='Connect MongoDB' title='Connect MongoDB'>Connect MongoDB</a>",
+			];
+		}
 		
 		return $form;
 	}
@@ -69,6 +77,7 @@ class parentkeyupdateForm extends FormBase{
 	* {@inheritdoc}
 	*/
 	public function submitForm(array &$form, FormStateInterface $form_state){
+		global $base_url;
 		
 		if (isset($_GET['mongodb_collection'])) {
 			$document_id = $_GET['document_id'];
@@ -114,9 +123,14 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$server_output = curl_exec ($ch);
 			drupal_set_message("Updated changes successfully");
 			curl_close ($ch);	
+			$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+			if($showHideJson == "Yes")
+				drupal_set_message($server_output);
+			
+			$redirect_url = $base_url.'/mongodb_api/managedocument?collection_name='.$collection_name.'&document_id='.$document_id;
+			$response = new \Symfony\Component\HttpFoundation\RedirectResponse($redirect_url);
+			$response->send();
+			return;
 		}
-		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
-		if($showHideJson == "Yes")
-			drupal_set_message($server_output);
 	}
 }
