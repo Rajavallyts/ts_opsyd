@@ -74,13 +74,7 @@ mongodb_api.addgroupuser:
   route_name : mongodb_api.addgroupuser
   title: Create User
   base_route: mongodb_api.listcollection
-  weight: 130  
-
-mongodb_api.addsubgroup:
-  route_name : mongodb_api.addsubgroup
-  title: Create Subgroup
-  base_route: mongodb_api.listcollection
-  weight: 140  
+  weight: 130
   
 mongodb_api.searchmongodb:
   route_name: mongodb_api.search
