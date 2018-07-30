@@ -4,11 +4,12 @@ entity.dataform.collection:
   title: 'Data Form Setting list'
   route_name: entity.dataform.collection
   description: 'List Data Form Setting entities'
-  parent: system.admin_structure
-  weight: 100
+  parent: mongodb_api.welcome
+  weight: 75
 
 dataform.admin.structure.settings:
   title: 'Data Form Settings'
   description: 'Configure Data Form Setting entities'
   route_name: dataform.settings
-  parent: system.admin_structure
+  parent: mongodb_api.welcome
+  weight: 76

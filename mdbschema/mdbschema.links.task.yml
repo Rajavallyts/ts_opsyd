@@ -1,0 +1,22 @@
+# Mdbschema routing definition
+mdb_schema.settings_tab:
+  route_name: mdb_schema.settings
+  title: 'Settings'
+  base_route: mdb_schema.settings
+
+entity.mdb_schema.canonical:
+  route_name: entity.mdb_schema.canonical
+  base_route: entity.mdb_schema.canonical
+  title: 'View'
+
+entity.mdb_schema.edit_form:
+  route_name: entity.mdb_schema.edit_form
+  base_route: entity.mdb_schema.canonical
+  title: 'Edit'
+
+entity.mdb_schema.delete_form:
+  route_name:  entity.mdb_schema.delete_form
+  base_route:  entity.mdb_schema.canonical
+  title: Delete
+  weight: 10
+

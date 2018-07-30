@@ -1,0 +1,15 @@
+
+# Mdbschema menu items definition
+entity.mdb_schema.collection:
+  title: 'Mdbschema list'
+  route_name: entity.mdb_schema.collection
+  description: 'List Mdbschema entities'
+  parent: mongodb_api.welcome
+  weight: 81
+
+mdb_schema.admin.structure.settings:
+  title: 'Mdbschema settings'
+  description: 'Configure Mdbschema entities'
+  route_name: mdb_schema.settings
+  parent: mongodb_api.welcome
+  weight: 82

@@ -1,0 +1,14 @@
+{
+  "name": "drupal/mdbschema",
+  "type": "drupal-module",
+  "description": "used for saving the mdb collection, doc structure",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "homepage": "https://www.drupal.org/project/mdbschema",
+  "minimum-stability": "dev",
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/mdbschema",
+    "source": "http://cgit.drupalcode.org/mdbschema"
+  },
+  "require": { }
+}

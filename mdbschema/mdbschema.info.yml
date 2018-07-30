@@ -1,0 +1,5 @@
+name: 'mdbschema'
+type: module
+description: 'used for saving the mdb collection, doc structure'
+core: 8.x
+package: 'Custom'

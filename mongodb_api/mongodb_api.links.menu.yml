@@ -1,11 +1,11 @@
-mongodb_api.admin:
+mongodb_api.welcome:
   title: 'Mongo DB'
   description: 'Module to integrate MongoDB API calls'
-  parent: system.admin_structure
-  route_name: mongodb_api.content
-  weight: 100
+  parent: system.admin
+  route_name: mongodb_api.welcome
+  weight: 110
 mongodb_api.admin_config:
   title: 'Mongodb Configuration'
   description: 'Configuration settings for Mongodb API function'
   route_name: mongodb_api.admin_config
-  parent: system.admin_config_system  
+  parent: system.admin_config_system

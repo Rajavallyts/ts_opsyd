@@ -4,11 +4,12 @@ entity.collection_field_relation.collection:
   title: 'Collection field relation list'
   route_name: entity.collection_field_relation.collection
   description: 'List Collection field relation entities'
-  parent: system.admin_structure
-  weight: 100
+  parent: mongodb_api.welcome
+  weight: 79
 
 collection_field_relation.admin.structure.settings:
   title: 'Collection field relation settings'
   description: 'Configure Collection field relation entities'
   route_name: collection_field_relation.settings
-  parent: system.admin_structure
+  parent: mongodb_api.welcome
+  weight: 80
