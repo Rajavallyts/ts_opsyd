@@ -155,9 +155,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		$cur_collection = $form_values["current_setup_collection"];
 		if(!empty($form_values["mdb_schema_id"])){
 			// remove old dataform, webform, node, group and urlredirect
-			$cur_collection_array = $form_values["current_collection_array"];
+			/* $cur_collection_array = $form_values["current_collection_array"];
 			$old_collection_array = $form_values["old_collection_array"];
 			$coll_diff = array_diff($old_collection_array, $cur_collection_array);
+			
+			$coll_diff = array('Product');
 			
 			if(!empty($coll_diff)){
 				$query = \Drupal::entityQuery('dataform')
@@ -241,7 +243,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						}
 					}
 				}
-			}
+			} */
 			
 			// schema update
 			$mdbschema = MDBSchema::load($form_values["mdb_schema_id"]);

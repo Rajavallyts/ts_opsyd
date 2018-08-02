@@ -347,7 +347,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					);
 				}
 				
-				$dropdown_sort = '';
+				$dropdown_sort = 'asc';
 				if(isset($webform_elements[$resultkey]["#dropdown_sort"]))
 					$dropdown_sort = $webform_elements[$resultkey]["#dropdown_sort"];
 				
@@ -486,24 +486,24 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					];
 				}elseif ($document_value['field_format'] == 'boolean') {
 					$webform_elements[$document_value['key']] = [
-						'#title' => $document_value['key'],
-						'#type' => 'checkbox'
+					'#title' => $document_value['key'],
+					'#type' => 'checkbox'
 					];
 				}elseif ($document_value['field_format'] == 'webform_image_file') {
 					$webform_elements[$document_value['key']] = [
-						'#title' => $document_value['key'],
-						'#type' => 'webform_image_file',				
-						'#multiple' =>	$multiple_attr,				
-						'#uri_scheme' => 's3'
+					'#title' => $document_value['key'],
+					'#type' => 'webform_image_file',				
+					'#multiple' =>	$multiple_attr,				
+					'#uri_scheme' => 's3'
 					];					
 				}elseif ($document_value['field_format'] == 'generic_element') {
 					$webform_elements[$document_value['key']] = [
-						'#title' => $document_value['key'],
-						'#type' => 'element',
-						'#multiple' =>	$multiple_attr,
-						'#entity_id' => $document_value['entity_id'],
-						'#field_type' => $document_value['relative_field_format'],
-						'#dropdown_sort' => $document_value['dropdown_sort']
+					'#title' => $document_value['key'],
+					'#type' => 'element',
+					'#multiple' =>	$multiple_attr,
+					'#entity_id' => $document_value['entity_id'],
+					'#field_type' => $document_value['relative_field_format'],
+					'#dropdown_sort' => $document_value['dropdown_sort']
 					];
 				}elseif ($document_value['field_format'] == 'textfield') {
 					$webform_elements[$document_value['key']] = [
@@ -515,8 +515,8 @@ public function validateForm(array &$form, FormStateInterface $form_state) {
 					];
 				}else {
 					$webform_elements[$document_value['key']] = [
-						'#title' => $document_value['key'],
-						'#type' => $document_value['field_format'],
+					'#title' => $document_value['key'],
+					'#type' => $document_value['field_format'],
 					];				
 				}
 				$webform_elements[$document_value['key']]['#required'] = $required_attr;
@@ -906,7 +906,7 @@ function addsubleveldoc($resultKey, $resultValue, $nlevelKey, $webform_elements,
 				);
 			}
 			
-			$dropdown_sort = '';
+			$dropdown_sort = 'asc';
 			if(isset($webform_elements[$key]["#dropdown_sort"]))
 				$dropdown_sort = $webform_elements[$key]["#dropdown_sort"];
 			

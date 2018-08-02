@@ -76,19 +76,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					
 					foreach($json_collectionresult as $colresult):
 						foreach($colresult as $innercolkey => $innercolvalue):
-							if ($innercolkey != "_id") {
-								if (is_array($innercolvalue)) {
-									//$keylist[] = $innercolkey;
-									foreach ($innercolvalue as $ikey => $ival):
-										if (!is_int($ikey)) 
-											$keylist[] = listKey($innercolvalue, $innercolkey);
-										else
-											$keylist[] = $innercolkey;
-										break;
-									endforeach;
-								} else
-								$keylist[] = $innercolkey;
-							}
+							$keylist[] = $innercolkey;
 						endforeach;
 					endforeach;
 					
@@ -99,17 +87,11 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					];
 					$form['collections'][$i]['doclist'] = [
 						'#type' => 'markup',
-						'#markup' => implode("<BR>" , array_unique($keylist)), //count($json_collectionresult),
+						'#markup' => implode(", " , array_unique($keylist)), //count($json_collectionresult),
 					];
 					$i++;
 				}
 			endforeach;
-			
-			$form['submit'] = [
-				'#type' => 'submit',
-				'#title' => t('Save changes'),
-			];
-			
 		}else{
 			if(count($mdbschemas) > 0){
 				if (implode(", ", $old_list) == implode(", ", $latest_list)) {
@@ -149,19 +131,4 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	 
   }
 
- 
 }
-function listKey($passarray, $passkey) {
-	kint(print_r($passarray, true));
-		$listkey = [];
-	  foreach ($passarray as $key => $value):
-		if (is_array($value)) {
-			//$listkey[] = $passkey . "." . $key;
-			
-			$listkey[] = listkey($value, $passkey.".".$key);
-		} else
-			$listkey[] = $passkey . "." . $key;
-		endforeach;
-		$keylist = implode("<BR>", $listkey);
-	  return $keylist;
-  }

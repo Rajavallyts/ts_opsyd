@@ -150,7 +150,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$multiple_attr = '';
 						if(isset($webform_elements[$field]["#multiple"]) && $webform_elements[$field]["#multiple"] == 1)
 							$multiple_attr = 1;
-						
+
 						$dropdown_list = array('' => 'Select') + $dropdown_list;
 						$form['document'][$i]['select'] = array(
 							'#type' => 'select',
@@ -235,6 +235,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							'#required' =>	$required_attr,
 							'#upload_location' => 's3://'.date("Y-m"), /* s3://2018-04 */
 							'#default_value' => $fid,
+						);
+						
+						$drupal_file = 1;
+						if(!empty($json_result[$field]) && empty($fid)){
+							$drupal_file = 0;
+						}
+						$form['document'][$i]['drupal_file'] = array(			
+							'#type' => 'hidden',
+							'#default_value' => $drupal_file,
 						);
 						
 						$form['document'][$i]['image_info'] = array(			
@@ -408,17 +417,13 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						
 						if($multiple_attr){
 							// Gather the number of names in the form already.
-							$num_names = $form_state->get('num_names_'.$i);
-							// We have to ensure that there is at least one name field.
-							if ($num_names === NULL) {
-								if(isset($json_result[$field]) && count($json_result[$field]) > 0){
-									$name_field = $form_state->set('num_names_'.$i, count($json_result[$field]));
-									$num_names = count($json_result[$field]);
-								}else{
-									$name_field = $form_state->set('num_names_'.$i, 1);
-									$num_names = 1;
-								}
+							if ($form_state->get('num_names_'.$i) == '') {
+								if(isset($json_result[$field]) && count($json_result[$field]) > 0)
+									$form_state->set('num_names_'.$i, range(0, count($json_result[$field])-1));
+								else
+									$form_state->set('num_names_'.$i, range(0, 0));
 							}
+							$num_names = $form_state->get('num_names_'.$i);
 							
 							$form['document'][$i]['names_fieldset'] = [
 							  '#type' => 'fieldset',
@@ -427,32 +432,40 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							];
 							
 							$text_field_value = array();
-							for ($k = 0; $k < $num_names; $k++) {
-								if(isset($json_result[$field]) && !empty($json_result[$field])){
-									if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
-										if(is_array($json_result[$field])){
-											$text_field_value[$k] = '';
-											$timestamp = strtotime($json_result[$field][$k]);
-											if(!empty($timestamp))
-												$text_field_value[$k] = DrupalDateTime::createFromTimestamp($timestamp);
+							foreach ($num_names as $k) {
+								if(!empty($form_state->getValue("document")[$i]["names_fieldset"][$k]['dvalue'])){
+									$text_field_value[$k] = $form_state->getValue("document")[$i]["names_fieldset"][$k]['dvalue'];
+								}else{
+									if(isset($json_result[$field]) && !empty($json_result[$field])){
+										if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+											if(is_array($json_result[$field])){
+												$text_field_value[$k] = '';
+												$timestamp = strtotime($json_result[$field][$k]);
+												if(!empty($timestamp))
+													$text_field_value[$k] = DrupalDateTime::createFromTimestamp($timestamp);
+											}else{
+												$text_field_value[0] = '';
+												$timestamp = strtotime($json_result[$field]);
+												if(!empty($timestamp))
+													$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
+											}
 										}else{
-											$text_field_value[0] = '';
-											$timestamp = strtotime($json_result[$field]);
-											if(!empty($timestamp))
-												$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
-										}
-									}else{
-										if(is_array($json_result[$field])){
-											$text_field_value[$k] = $json_result[$field][$k];
-										}else{
-											$text_field_value[0] = $json_result[$field];
+											if(is_array($json_result[$field])){
+												$text_field_value[$k] = $json_result[$field][$k];
+											}else{
+												$text_field_value[0] = $json_result[$field];
+											}
 										}
 									}
 								}
 								if(!isset($text_field_value[$k]))
 									$text_field_value[$k] = '';
 								
-								$form['document'][$i]['names_fieldset']['dvalue'][$k] = array(
+								$form['document'][$i]['names_fieldset'][$k]['start_div'] = array(
+									'#markup' => '<div class="multi-field">'
+								);
+								
+								$form['document'][$i]['names_fieldset'][$k]['dvalue'] = array(
 									'#type' => $text_field_type,
 									'#title' => $field_label,
 									'#required' =>	$required_attr,
@@ -463,13 +476,33 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 								if(!empty($webform_elements[$field]["#text_field_type"])){
 									if($text_field_type == "number" || $text_field_type == "float"){
 										if($text_field_type == "number")
-											$form['document'][$i]['names_fieldset']['dvalue'][$k]["#step"] = 1;
+											$form['document'][$i]['names_fieldset'][$k]['dvalue']["#step"] = 1;
 										else
-											$form['document'][$i]['names_fieldset']['dvalue'][$k]["#step"] = "any";
-										$form['document'][$i]['names_fieldset']['dvalue'][$k]["#type"] = "number";
+											$form['document'][$i]['names_fieldset'][$k['dvalue']]["#step"] = "any";
+										$form['document'][$i]['names_fieldset'][$k]['dvalue']["#type"] = "number";
 									}
 								}
-								
+								// hide field title
+								if($k > 0)
+									$form['document'][$i]['names_fieldset'][$k]['dvalue']["#title"] = "";
+								// If there is more than one name, add the remove button.
+								if (count($num_names) > 1) {
+								  $form['document'][$i]['names_fieldset'][$k]['remove_name'] = [
+									'#type' => 'submit',
+									'#name' => 'remove_one_'.$i.'_'.$k,
+									'#value' => t('Remove'),
+									'#submit' => ['::removeCallback'],
+									'#prefix' => '<div class="multi-field-actions">',
+									'#suffix' => '</div>',
+									'#ajax' => [
+									  'callback' => '::addmoreCallback',
+									  'wrapper' => 'names-fieldset-wrapper-'.$i,
+									],
+								  ];
+								}
+								$form['document'][$i]['names_fieldset'][$k]['end_div'] = array(
+									'#markup' => '</div>'
+								);
 							}
 							
 							$form['document'][$i]['names_fieldset']['actions'] = [
@@ -480,24 +513,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 							  '#name' => 'add_one_'.$i,
 							  '#value' => t('Add one more'),
 							  '#submit' => ['::addOne'],
+							  '#attributes' => array('class' => array('multi-add-more')),
 							  '#ajax' => [
 								'callback' => '::addmoreCallback',
 								'wrapper' => 'names-fieldset-wrapper-'.$i,
 							  ],
 							];
-							// If there is more than one name, add the remove button.
-							if ($num_names > 1) {
-							  $form['document'][$i]['names_fieldset']['actions']['remove_name'] = [
-								'#type' => 'submit',
-								'#name' => 'remove_one_'.$i,
-								'#value' => t('Remove one'),
-								'#submit' => ['::removeCallback'],
-								'#ajax' => [
-								  'callback' => '::addmoreCallback',
-								  'wrapper' => 'names-fieldset-wrapper-'.$i,
-								],
-							  ];
-							}
 							
 						}else{
 							$text_field_value = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
@@ -591,9 +612,23 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	$triggered_element = $form_state->getTriggeringElement()["#name"];
 	$iterator = explode("_",$triggered_element);
 	  
-    $name_field = $form_state->get('num_names_'.$iterator[2]);
-    $add_button = $name_field + 1;
-    $form_state->set('num_names_'.$iterator[2], $add_button);
+	// Store our form state
+    $name_field_array = $form_state->get('num_names_'.$iterator[2]);
+    
+    // check to see if there is more than one item in our array
+    if (count($name_field_array) > 0) {
+      // Add a new element to our array and set it to our highest value plus one
+      $name_field_array[] = max($name_field_array) + 1;
+    }
+    else {
+      // Set the new array element to 0
+      $name_field_array[] = 0;
+    }
+  
+    // Rebuild the field deltas values
+    $form_state->set('num_names_'.$iterator[2], $name_field_array);
+	
+	// Rebuild the form
     $form_state->setRebuild();
   }
 
@@ -603,14 +638,26 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
    * Decrements the max counter and causes a form rebuild.
    */
   public function removeCallback(array &$form, FormStateInterface $form_state) {
+	 // Get the triggering item
 	$triggered_element = $form_state->getTriggeringElement()["#name"];
 	$iterator = explode("_",$triggered_element);
 	  
-    $name_field = $form_state->get('num_names_'.$iterator[2]);
-    if ($name_field > 1) {
-      $remove_button = $name_field - 1;
-      $form_state->set('num_names_'.$iterator[2], $remove_button);
-    }
+	// index of triggered element
+	$name_remove = $iterator[3];
+	
+	// Store our form state
+    $name_field_array = $form_state->get('num_names_'.$iterator[2]);
+	
+	 // Find the key of the item we need to remove
+	$key_to_remove = array_search($name_remove, $name_field_array);
+	
+	// Remove our triggered element
+	unset($name_field_array[$key_to_remove]);
+	
+	// Rebuild the field deltas values
+    $form_state->set('num_names_'.$iterator[2], $name_field_array);
+    
+    // Rebuild the form
     $form_state->setRebuild();
   }
   
@@ -640,9 +687,23 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	$triggered_element = $form_state->getTriggeringElement()["#name"];
 	$iterator = explode("_",$triggered_element);
 	  
-    $name_field = $form_state->get('sub_num_names_'.$iterator[2]);
-    $add_button = $name_field + 1;
-    $form_state->set('sub_num_names_'.$iterator[2], $add_button);
+	// Store our form state
+    $name_field_array = $form_state->get('sub_num_names_'.$iterator[2]);
+    
+    // check to see if there is more than one item in our array
+    if (count($name_field_array) > 0) {
+      // Add a new element to our array and set it to our highest value plus one
+      $name_field_array[] = max($name_field_array) + 1;
+    }
+    else {
+      // Set the new array element to 0
+      $name_field_array[] = 0;
+    }
+  
+    // Rebuild the field deltas values
+    $form_state->set('sub_num_names_'.$iterator[2], $name_field_array);
+	
+	// Rebuild the form
     $form_state->setRebuild();
   }
 
@@ -655,11 +716,22 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	$triggered_element = $form_state->getTriggeringElement()["#name"];
 	$iterator = explode("_",$triggered_element);
 	  
-    $name_field = $form_state->get('sub_num_names_'.$iterator[2]);
-    if ($name_field > 1) {
-      $remove_button = $name_field - 1;
-      $form_state->set('sub_num_names_'.$iterator[2], $remove_button);
-    }
+	// index of triggered element
+	$name_remove = $iterator[3];
+	
+	// Store our form state
+    $name_field_array = $form_state->get('sub_num_names_'.$iterator[2]);
+	
+	 // Find the key of the item we need to remove
+	$key_to_remove = array_search($name_remove, $name_field_array);
+	
+	// Remove our triggered element
+	unset($name_field_array[$key_to_remove]);
+	
+	// Rebuild the field deltas values
+    $form_state->set('sub_num_names_'.$iterator[2], $name_field_array);
+    
+    // Rebuild the form
     $form_state->setRebuild();  
   }
   
@@ -768,15 +840,16 @@ public function manage_submit_form($form, &$form_state) {
 			 }
 		 }
 		 
-			 if (isset($document_value['names_fieldset'])) {
-				 if ($document_value['names_fieldset'] != "") {
-					$dval_txt = '';
-					foreach($document_value['names_fieldset']['dvalue'] as $dvalue){
-						$dval_txt .= '"'.$dvalue.'",';
-					}
-					$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($dval_txt,",") . '],';
-				 }
+		 if (isset($document_value['names_fieldset'])) {
+			 if ($document_value['names_fieldset'] != "") {
+				$dval_txt = '';
+			foreach($document_value['names_fieldset'] as $names_fieldset){
+				if(!empty($names_fieldset["dvalue"]))
+					$dval_txt .= '"'.$names_fieldset["dvalue"].'",';
+				}
+				$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($dval_txt,",") . '],';
 			 }
+		 }
 					 
 		 if (isset($document_value['checkbox'])) {
 			 if ($document_value['checkbox'] == 1) {
@@ -860,47 +933,51 @@ public function manage_submit_form($form, &$form_state) {
 			 
 		 if (isset($document_value['image'])) {
 			if(is_array($document_value['image']) && $document_value['image_info'] == 1){
-				$file_uri = '';
-				if(!empty($document_value['image'])){
-					foreach($document_value['image'] as $image){
-					 
+				if($document_value['drupal_file'] == 1){
+					$file_uri = '';
+					if(!empty($document_value['image'])){
+						foreach($document_value['image'] as $image){
+						 
+							// set file status permanent
+							$con = \Drupal\Core\Database\Database::getConnection();
+							$con->update('file_managed')
+								->fields(['status' => 1])
+								->condition('fid',$image,"=")
+								->execute();
+	
+							// get file uri
+							$file_source = \Drupal::database()->select("file_managed","f")
+										->fields("f",array("uri"))
+										->condition("fid",$image,"=")
+										->execute()
+										->fetchAssoc();
+							$file_uri .= '"' . $file_source["uri"].'",';
+						}
+						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
+					}else
+						$updateWith .= '"' . $document_value['dkey'] . '":[],';
+				}
+			}else{
+				if($document_value['drupal_file'] == 1){
+					if(!empty($document_value['image'])){
+						$file_source = array();
 						// set file status permanent
 						$con = \Drupal\Core\Database\Database::getConnection();
 						$con->update('file_managed')
 							->fields(['status' => 1])
-							->condition('fid',$image,"=")
+							->condition('fid',$document_value['image'][0],"=")
 							->execute();
-
+	
 						// get file uri
 						$file_source = \Drupal::database()->select("file_managed","f")
 									->fields("f",array("uri"))
-									->condition("fid",$image,"=")
+									->condition("fid",$document_value['image'][0],"=")
 									->execute()
 									->fetchAssoc();
-						$file_uri .= '"' . $file_source["uri"].'",';
-					}
-					$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
-				}else
-					$updateWith .= '"' . $document_value['dkey'] . '":[],';
-			}else{
-				if(!empty($document_value['image'])){
-					$file_source = array();
-					// set file status permanent
-					$con = \Drupal\Core\Database\Database::getConnection();
-					$con->update('file_managed')
-						->fields(['status' => 1])
-						->condition('fid',$document_value['image'][0],"=")
-						->execute();
-
-					// get file uri
-					$file_source = \Drupal::database()->select("file_managed","f")
-								->fields("f",array("uri"))
-								->condition("fid",$document_value['image'][0],"=")
-								->execute()
-								->fetchAssoc();
-					$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
-				}else
-					$updateWith .= '"' . $document_value['dkey'] . '":"",';
+						$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
+					}else
+						$updateWith .= '"' . $document_value['dkey'] . '":"",';
+				}
 			}
 		 }
 	   }
@@ -1060,8 +1137,9 @@ function addsublevel_submit($document_values){
 			 if (isset($document_value['names_fieldset'])) {
 				 if ($document_value['names_fieldset'] != "") {
 					$dval_txt = '';
-					foreach($document_value['names_fieldset']['dvalue'] as $dvalue){
-						$dval_txt .= '"'.$dvalue.'",';
+					foreach($document_value['names_fieldset'] as $names_fieldset){
+						if(!empty($names_fieldset["dvalue"]))
+							$dval_txt .= '"'.$names_fieldset["dvalue"].'",';
 					}
 					$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($dval_txt,",") . '],';
 				 }
@@ -1149,47 +1227,51 @@ function addsublevel_submit($document_values){
 			 
 			 if (isset($document_value['image'])) {
 				if(is_array($document_value['image']) && $document_value['image_info'] == 1){
-					if(!empty($document_value['image'])){
-						$file_uri = '';
-						foreach($document_value['image'] as $image){
-						 
+					if($document_value['drupal_file'] == 1){
+						if(!empty($document_value['image'])){
+							$file_uri = '';
+							foreach($document_value['image'] as $image){
+							 
+								// set file status permanent
+								$con = \Drupal\Core\Database\Database::getConnection();
+								$con->update('file_managed')
+									->fields(['status' => 1])
+									->condition('fid',$image,"=")
+									->execute();
+	
+								// get file uri
+								$file_source = \Drupal::database()->select("file_managed","f")
+											->fields("f",array("uri"))
+											->condition("fid",$image,"=")
+											->execute()
+											->fetchAssoc();
+								$file_uri .= '"' . $file_source["uri"].'",';
+							}
+							$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
+						}else
+							$updateWith .= '"' . $document_value['dkey'] . '":[],';
+					}
+				}else{
+					if($document_value['drupal_file'] == 1){
+						if(!empty($document_value['image'])){
+							$file_source = array();
 							// set file status permanent
 							$con = \Drupal\Core\Database\Database::getConnection();
 							$con->update('file_managed')
 								->fields(['status' => 1])
-								->condition('fid',$image,"=")
+								->condition('fid',$document_value['image'][0],"=")
 								->execute();
-
+	
 							// get file uri
 							$file_source = \Drupal::database()->select("file_managed","f")
 										->fields("f",array("uri"))
-										->condition("fid",$image,"=")
+										->condition("fid",$document_value['image'][0],"=")
 										->execute()
 										->fetchAssoc();
-							$file_uri .= '"' . $file_source["uri"].'",';
-						}
-						$updateWith .= '"' . $document_value['dkey'] . '":[' . rtrim($file_uri,",") . '],';
-					}else
-						$updateWith .= '"' . $document_value['dkey'] . '":[],';
-				}else{
-					if(!empty($document_value['image'])){
-						$file_source = array();
-						// set file status permanent
-						$con = \Drupal\Core\Database\Database::getConnection();
-						$con->update('file_managed')
-							->fields(['status' => 1])
-							->condition('fid',$document_value['image'][0],"=")
-							->execute();
-
-						// get file uri
-						$file_source = \Drupal::database()->select("file_managed","f")
-									->fields("f",array("uri"))
-									->condition("fid",$document_value['image'][0],"=")
-									->execute()
-									->fetchAssoc();
-						$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
-					}else
-						$updateWith .= '"' . $document_value['dkey'] . '":"",';
+							$updateWith .= '"' . $document_value['dkey'] . '":"' . $file_source["uri"] . '",';
+						}else
+							$updateWith .= '"' . $document_value['dkey'] . '":"",';
+					}
 				}
 			 }
 		}
@@ -1336,6 +1418,15 @@ function addsublevel($parentField, $webform_elements, $json_result = array(), $f
 					'#required' =>	$required_attr,
 				);
 				
+				$drupal_file = 1;
+				if(!empty($json_result[$field]) && empty($fid)){
+					$drupal_file = 0;
+				}
+				$form[$j]['drupal_file'] = array(			
+					'#type' => 'hidden',
+					'#default_value' => $drupal_file,
+				);
+				
 				$form[$j]['image_info'] = array(			
 					'#type' => 'hidden',
 					'#default_value' => $multiple_attr,
@@ -1395,20 +1486,20 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						$sub_cat_key = $sub_cat_keys[count($sub_cat_keys)-1];
 					}
 				}
-				
+
 				$relative_options = array();
-				foreach($documents as $document){
-					if(isset($document[$rel_value]) && !is_array($document[$rel_value])){
-						$relative_options[$document[$rel_key]] = $document[$rel_value];
+					foreach($documents as $document){				
+						if(isset($document[$rel_value]) && !is_array($document[$rel_value])){
+							$relative_options[$document[$rel_key]] = $document[$rel_value];
+						}
 					}
-				}
 				if(isset($webform_elements[$field]["#dropdown_sort"])){
 					if($webform_elements[$field]["#dropdown_sort"] == "asc")
 						asort($relative_options);
 					if($webform_elements[$field]["#dropdown_sort"] == "desc")
 						arsort($relative_options);
 				}
-
+					
 				if($webform_elements[$field]["#field_type"] == 'select'){
 					$relative_options = array('' => 'Select') + $relative_options;		
 					if(isset($cat_key) && $cat_key == $field){
@@ -1516,18 +1607,15 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 				}
 				
 				if($multiple_attr){
+					
 					// Gather the number of names in the form already.
-					$sub_num_names = $form_state->get('sub_num_names_'.$j);
-					// We have to ensure that there is at least one name field.
-					if ($sub_num_names === NULL) {
-						if(isset($json_result[$field]) && count($json_result[$field]) > 0){
-							$name_field = $form_state->set('sub_num_names_'.$j, count($json_result[$field]));
-							$sub_num_names = count($json_result[$field]);
-						}else{
-							$name_field = $form_state->set('sub_num_names_'.$j, 1);
-							$sub_num_names = 1;
-						}
+					if ($form_state->get('sub_num_names_'.$j) == '') {
+						if(isset($json_result[$field]) && count($json_result[$field]) > 0)
+							$form_state->set('sub_num_names_'.$j, range(0, count($json_result[$field])-1));
+						else
+							$form_state->set('sub_num_names_'.$j, range(0, 0));
 					}
+					$sub_num_names = $form_state->get('sub_num_names_'.$j);
 					
 					$form[$j]['names_fieldset'] = [
 					  '#type' => 'fieldset',
@@ -1536,32 +1624,40 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					];
 					
 					$text_field_value = array();
-					for ($l = 0; $l < $sub_num_names; $l++) {
-						if(isset($json_result[$field]) && !empty($json_result[$field])){
-							if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
-								if(is_array($json_result[$field])){
-									$text_field_value[$l] = '';
-									$timestamp = strtotime($json_result[$field][$l]);
-									if(!empty($timestamp))
-										$text_field_value[$l] = DrupalDateTime::createFromTimestamp($timestamp);
+					foreach ($sub_num_names as $l) {
+						if(!empty($form_state->getValue("document")[$j]["names_fieldset"][$l]['dvalue'])){
+							$text_field_value[$l] = $form_state->getValue("document")[$j]["names_fieldset"][$l]['dvalue'];
+						}else{
+							if(isset($json_result[$field]) && !empty($json_result[$field])){
+								if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
+									if(is_array($json_result[$field])){
+										$text_field_value[$l] = '';
+										$timestamp = strtotime($json_result[$field][$l]);
+										if(!empty($timestamp))
+											$text_field_value[$l] = DrupalDateTime::createFromTimestamp($timestamp);
+									}else{
+										$text_field_value[0] = '';
+										$timestamp = strtotime($json_result[$field]);
+										if(!empty($timestamp))
+											$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
+									}
 								}else{
-									$text_field_value[0] = '';
-									$timestamp = strtotime($json_result[$field]);
-									if(!empty($timestamp))
-										$text_field_value[0] = DrupalDateTime::createFromTimestamp($timestamp);
-								}
-							}else{
-								if(is_array($json_result[$field])){
-									$text_field_value[$l] = $json_result[$field][$l];
-								}else{
-									$text_field_value[0] = $json_result[$field];
+									if(is_array($json_result[$field])){
+										$text_field_value[$l] = $json_result[$field][$l];
+									}else{
+										$text_field_value[0] = $json_result[$field];
+									}
 								}
 							}
 						}
-						if(!isset($text_field_value[$k]))
-							$text_field_value[$k] = '';
+						if(!isset($text_field_value[$l]))
+							$text_field_value[$l] = '';
 						
-						$form[$j]['names_fieldset']['dvalue'][$l] = array(
+						$form[$j]['names_fieldset'][$l]['start_div'] = array(
+							'#markup' => '<div class="multi-field">'
+						);
+						
+						$form[$j]['names_fieldset'][$l]['dvalue'] = array(
 							'#type' => $text_field_type,
 							'#title' => $field_label,
 							'#required' =>	$required_attr,
@@ -1572,12 +1668,36 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 						if(!empty($webform_elements[$field]["#text_field_type"])){
 							if($text_field_type == "number" || $text_field_type == "float"){
 								if($text_field_type == "number")
-									$form[$j]['names_fieldset']['dvalue'][$l]["#step"] = 1;
+									$form[$j]['names_fieldset'][$l]['dvalue']["#step"] = 1;
 								else
-									$form[$j]['names_fieldset']['dvalue'][$l]["#step"] = "any";
-								$form[$j]['names_fieldset']['dvalue'][$l]["#type"] = "number";
+									$form[$j]['names_fieldset'][$l]['dvalue']["#step"] = "any";
+								$form[$j]['names_fieldset'][$l]['dvalue']["#type"] = "number";
 							}
 						}
+						
+						// hide field title
+						if($l > 0)
+							$form[$j]['names_fieldset'][$l]['dvalue']["#title"] = "";
+						
+						// If there is more than one name, add the remove button.
+						if ($sub_num_names > 1) {
+						  $form[$j]['names_fieldset'][$l]['remove_name'] = [
+							'#type' => 'submit',
+							'#name' => 'remove_one_'.$j.'_'.$l,
+							'#value' => t('Remove'),
+							'#submit' => ['::removeSubCallback'],
+							'#prefix' => '<div class="multi-field-actions">',
+							'#suffix' => '</div>',
+							'#ajax' => [
+							  'callback' => '::addmoreSubCallback',
+							  'wrapper' => 'names-fieldset-wrapper-'.$j,
+							],
+						  ];
+						}
+						
+						$form[$j]['names_fieldset'][$l]['end_div'] = array(
+							'#markup' => '</div>'
+						);
 					}
 					
 					$form[$j]['names_fieldset']['actions'] = [
@@ -1588,25 +1708,12 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					  '#name' => 'add_one_'.$j,
 					  '#value' => t('Add one more'),
 					  '#submit' => ['::addSubOne'],
+					  '#attributes' => array('class' => array('multi-add-more')),
 					  '#ajax' => [
 						'callback' => '::addmoreSubCallback',
 						'wrapper' => 'names-fieldset-wrapper-'.$j,
 					  ],
 					];
-					// If there is more than one name, add the remove button.
-					if ($sub_num_names > 1) {
-					  $form[$j]['names_fieldset']['actions']['remove_name'] = [
-						'#type' => 'submit',
-						'#name' => 'remove_one_'.$j,
-						'#value' => t('Remove one'),
-						'#submit' => ['::removeSubCallback'],
-						'#ajax' => [
-						  'callback' => '::addmoreSubCallback',
-						  'wrapper' => 'names-fieldset-wrapper-'.$j,
-						],
-					  ];
-					}
-					
 				}else{
 					$text_field_value = (isset($json_result) && isset($json_result[$field])) ? $json_result[$field] : '';
 					if(!empty($webform_elements[$field]["#text_field_type"]) && $text_field_type == "datetime"){
@@ -1652,9 +1759,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 }
 
 function getDependentCatList($rel_collection,$rel_key,$rel_value,$field_type,$cat_id,$dropdown_sort) {
-	if($field_type == "select")
-		$subcat_lists = array('' => 'Select');
-	else
 		$subcat_lists = array();
 	$flag = 0;
 	if($cat_id != ''){
@@ -1699,6 +1803,9 @@ function getDependentCatList($rel_collection,$rel_key,$rel_value,$field_type,$ca
 		asort($subcat_lists);
 	if($dropdown_sort == "desc")
 		arsort($subcat_lists);
+	
+	if($field_type == "select")
+		$subcat_lists = array('' => 'Select') + $subcat_lists;
 	
 	return $subcat_lists;
 }

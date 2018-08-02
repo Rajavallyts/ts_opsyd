@@ -561,13 +561,20 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		}else{
 			if(!empty($mongodb_node->field_upload_key->entity)){
 				$file_uri = $mongodb_node->field_upload_key->entity->getFileUri();
+				if(!empty($file_uri)){
+					$file_url = drupal_realpath($file_uri);
+					if (function_exists('curl_file_create')) { // php 5.5+
+					  $curl_file = curl_file_create($file_url);
+					}
+				}
 			}
 			$api_param = array (
 				'host' => $mongodb_node->field_address->value.$addr_port,
 				'dbName' => $mongodb_node->field_database_name->value,
 				'ssh'  => true,
 				'ssh_username' => $mongodb_node->field_ssh_username->value,
-				'keyfile' => isset($file_uri) ? drupal_realpath($file_uri) : '',
+				//'keyfile' => isset($file_uri) ? drupal_realpath($file_uri) : '',
+				'keyfile' => isset($curl_file) ? $curl_file : '',
 				'key_passphrase' => (isset($mongodb_node->field_key_passphrase->value) && !empty($mongodb_node->field_key_passphrase->value)) ? $mongodb_node->field_key_passphrase->value : '',
 			);
 		}
@@ -586,10 +593,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		);
 	}
 	
-	/* drupal_set_message( "api-endpoing ==> ".print_r($api_endpointurl,true));
-	drupal_set_message( "api-param ==> ".print_r($api_param,true));
-	drupal_set_message( "api-nid ==> ".$mongodb_nid); */
-
 	$headers = array("Content-Type:multipart/form-data"); // cURL headers for file uploading
 	$ch = curl_init();
 	$options = array(
@@ -602,6 +605,13 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 	); 
 	curl_setopt_array($ch, $options);
 	$server_output = curl_exec ($ch);
+			
+	$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
+	if($showHideJson == "Yes"){
+		drupal_set_message( "api-endpoint ==> ".print_r($api_endpointurl,true));
+		drupal_set_message( "api-param ==> ".print_r($api_param,true));
+		drupal_set_message( "api-nid ==> ".$mongodb_nid);
+	}
 			
 	$response = $server_output;
 	$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
@@ -616,7 +626,6 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		
 		if(!empty($group_id))
 			$_SESSION['group_id'] = $group_id;
-		$showHideJson = \Drupal::config('mongodb_api.settings')->get('json_setting');
 		if($showHideJson == "Yes")
 			drupal_set_message (t('Success - Mongo DB connection establised.'));
 		
@@ -642,7 +651,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 		
 		return TRUE;
 	}else{
-		$errormessage = "Invalid Database information. No connection establised with <b>IP - " . $mongodb_node->title->value . "</b> and <b> name - " . $mongodb_node->field_db_name->value . "</b>"; 
+		$errormessage = "Invalid Database information. No connection establised with <b>IP - " . $mongodb_node->field_address->value . ":" .$mongodb_node->field_address_port->value. "</b> and <b> name - " . $mongodb_node->field_database_name->value . "</b>"; 
 		drupal_set_message(t($errormessage), "error");
 		return FALSE;
 	}

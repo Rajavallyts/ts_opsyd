@@ -267,21 +267,13 @@ mongodb_api.addgroupuser:
       _title: 'Create a new user'
    requirements:
       _permission: 'administer mongodb_api'
-
-mongodb_api.addsubgroup:
-   path: '/addsubgroup'
-   defaults:
-      _form: '\Drupal\mongodb_api\Form\addsubgroupForm'
-      _title: 'Create a Subgroup'
-   requirements:
-      _permission: 'administer mongodb_api'
 mongodb_api.mdb_schema:
   path: /mongodb_api/mdb_schema
   defaults:
     _form: 'Drupal\mongodb_api\Form\mdbschemaForm'
     _title: 'Mongodb Schema'
   requirements:
-    _permission: 'administer mongodb_api'          
+    _permission: 'administer mongodb_api'            
 mongodb_api.mdbschema_kvsettings:
   path: /mongodb_api/mdbschema_kvsettings
   defaults:

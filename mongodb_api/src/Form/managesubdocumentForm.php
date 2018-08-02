@@ -276,7 +276,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 			$fields = "{";
 			foreach($document_values as $document_value)
 			{
-			 if (isset($document_value['remove_key']) && $document_value['remove_key'] == 1) {
+			 if ($document_value['remove_key'] == 1) {
 				 $query .= '"' . $_GET['editkey'] . '.' . $document_value['key'] . '":"' . $document_value['valuee'] . '",';
 				 $fields .= '"' . $_GET['editkey'] . '.'  . $document_value['key'] . '":"",';
 			 }

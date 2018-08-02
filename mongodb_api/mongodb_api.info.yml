@@ -14,4 +14,3 @@ dependencies:
   - 'superfish:superfish'
   - 'dataform:dataform'
   - 'collection_relations:collection_relations'
-  - 'opsyd_subgroups:opsyd_subgroups'

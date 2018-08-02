@@ -70,9 +70,11 @@ Drupal.behaviors.mongodb_api = {
 		}else if($(this).val() == "radios"){
 			$(this).siblings(".dropdown_values").css("display","block");
 			$(this).siblings(".dropdown_sort").css("display","block");
-		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+		}else if($(this).val() == "generic_element"){
 			$(this).siblings(".multiple_check").css("display","block");
 			$(this).siblings(".dropdown_sort").css("display","block");
+		}else if($(this).val() == "webform_image_file"){
+			$(this).siblings(".multiple_check").css("display","block");
 		}
 	});
 	$(".dropdown_values").css("display","none");
@@ -92,9 +94,11 @@ Drupal.behaviors.mongodb_api = {
 		}else if($(this).val() == "radios"){
 			$(this).siblings(".dropdown_values").css("display","block");
 			$(this).siblings(".dropdown_sort").css("display","block");
-		}else if($(this).val() == "webform_image_file" || $(this).val() == "generic_element"){
+		}else if($(this).val() == "generic_element"){
 			$(this).siblings(".multiple_check").css("display","block");
 			$(this).siblings(".dropdown_sort").css("display","block");
+		}else if($(this).val() == "webform_image_file"){
+			$(this).siblings(".multiple_check").css("display","block");
 		}
 	});
 
@@ -172,36 +176,6 @@ Drupal.behaviors.mongodb_api = {
 			//"scrollX": true
 		});
 		
-		// Begin - Custom filter
-		if($("#add_link").length){
-			$('<div class="location-filter"><label for="locations_filter">Locations: </label><select name="locations_filter" id="locations_filter"><option value="">All</option><option value="Yes">Corporate</option><option value="No">Franchise</option></select></div>').insertAfter("#add_link");
-			$(document).on("change", "#locations_filter", function(e){
-				table.draw();
-			} );
-			
-			$.fn.dataTable.ext.search.push(
-				function( settings, data, dataIndex ) {
-					var location_val = $("#locations_filter").val();	
-					if(location_val != ''){
-						var i = 0;
-						var condColum = '';
-						$(".dataTable thead th").each(function(){
-							if($(this).html() == "Corporate")
-								condColum = i;
-							i++;
-						});
-						if (condColum != '' && data[condColum] == location_val){
-							return true;
-						}
-					}else{
-						return true;
-					}
-					return false;
-				}
-			);
-		}
-		// End - Custom filter
-		
 		$('#datadocument_list').DataTable({
 			"ordering": false,
 			aLengthMenu: [
@@ -235,5 +209,24 @@ Drupal.behaviors.mongodb_api = {
 			this.setCustomValidity("'" + this.value + "' is not a valid email bro!");
 		  }
 		}, false); */
+		
+		// handling the required checkbox in hms-settings page
+		$(".key_name").click(function(){
+			if($(this).is(":checked"))
+				$(this).parents('.field-rows').find('.key_required').attr("disabled",false);
+			else{
+				$(this).parents('.field-rows').find('.key_required').attr("disabled",true);
+				$(this).parents('.field-rows').find('.key_required').attr("checked",false);
+			}
+		});
+		
+		$(".key_name").each(function(){
+			if($(this).is(":checked"))
+				$(this).parents('.field-rows').find('.key_required').attr("disabled",false);
+			else{
+				$(this).parents('.field-rows').find('.key_required').attr("disabled",true);
+				$(this).parents('.field-rows').find('.key_required').attr("checked",false);
+			}
+		});
 	});
 })(jQuery, Drupal);

@@ -441,10 +441,10 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 														
 							foreach ($webform_elements_keys as $field):
 								if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1){
-									if(in_array($field, $relative_column)){	
+									if(in_array($field, $relative_column)){		
 										if($no_relation == 1)
 											$td_value = isset($result[$field]) ? $result[$field] : '';
-										else									
+										else
 											$td_value = isset($rel_td_array[$field][$result[$field]]) ? $rel_td_array[$field][$result[$field]] : '';
 									}else{
 										if(isset($result[$field]) && !empty($result[$field])){
@@ -678,7 +678,7 @@ $api_endpointurl = \Drupal::config('mongodb_api.settings')->get('endpointurl')."
 					$output_html .= "<tr>";
 					foreach ($webform_elements_keys as $field){
 						if($webform_elements[$field]["#type"] != "details" && $webform_elements[$field]["#multiple"] != 1){
-							if(in_array($field, $relative_column)){
+							if(in_array($field, $relative_column)){		
 								if($no_relation == 1)
 									$td_value = isset($result[$field]) ? $result[$field] : '';
 								else

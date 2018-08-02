@@ -268,3 +268,27 @@ ul.sf-menu.menu, ul.sf-menu.menu ul, ul.sf-menu.menu li {
     width: 150px;
 	padding: 0px 5px;
 }
+.multi-field{
+	float:left;
+	width: 100%;
+}
+.multi-field .form-item, .multi-field .multi-field-actions{
+	float:left;
+}
+.multi-field .form-item{
+	width:30%;
+}
+.multi-field .form-item input{
+	width:100%;
+}
+.multi-field:first-child .multi-field-actions{
+    margin-top: 1.3em;
+}
+.multi-field .multi-field-actions{
+    position: relative;
+    top: 1em;
+	padding-left: 10px;
+}
+ul.sf-menu li {
+  z-index: unset;
+}
